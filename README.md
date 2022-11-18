@@ -1,6 +1,6 @@
 # ContScout
 **Background**  
-ContScout is a pipeline developed to identify and remove contaminating sequences from draft genomes. As input, our tool requires two files: predicted protein sequences in fasta format as well as a genome annotation file linking protein IDs to contigs / scaffold. (See user manual for details.)
+ContScout is a pipeline developed to identify and remove contaminating sequences from draft genomes. As input, our tool requires two files: predicted protein sequences in *fasta* format as well as a genome *annotation file (gff, gff3 or gtf)*linking protein IDs to contigs / scaffold. (See user manual for details.)
 
 **Working concept**  
 Each query protein in the input file is first matched against a taxon-labelled reference database (for example: UniProt) using a speed-optimized search engine (MMSeqs, Diamond). Based on the taxon data from top-scoring database hits, each protein receives a high level taxon label (example: Virus, Archaea, Bacteria, Plant, Fungus, Animal, Other eukaryote). Protein-level taxon calls are then summarized over assembled genomic segments (scaffolds / contigs), followed by a consensus taxon assignment. Contigs (scaffolds) that disagree with the query taxon are removed, including all the protein they encode.
