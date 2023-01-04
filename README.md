@@ -14,4 +14,4 @@ Please consult Balint et al. 2022 "Purging genomes of contamination eliminates s
 **Important note**
 
 This is the frozen script version that was used to perform all analyses in study Balint et al. 2022 "Purging genomes of contamination eliminates systematic bias from evolutionary analyses of ancestral genomes" manuscipt
-fdf
+
