@@ -11,3 +11,7 @@ Contscout is implemented in R, pre-packaged as a Docker image, for convenient us
 **More information**  
 Please consult Balint et al. 2022 "Purging genomes of contamination eliminates systematic bias from evolutionary analyses of ancestral genomes" manuscipt, with a pre-print copy available at https://biorxiv.org/cgi/content/short/2022.11.17.516887v1.
 
+**Important note**
+
+This is the frozen script version that was used to perform all analyses in study Balint et al. 2022 "Purging genomes of contamination eliminates systematic bias from evolutionary analyses of ancestral genomes" manuscipt
+
