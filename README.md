@@ -8,7 +8,8 @@ Each query protein in the input file is first matched against a taxon-labelled r
 **Implementation**  
 Contscout is implemented in R, pre-packaged as a Docker image, for convenient use.
 Pre-compiled docker image can be downloaded by the following command:  
-docker pull h836472/constcout:latest
+  
+*docker pull h836472/constcout:latest*
 
 **More information**  
 Please consult Balint et al. 2022 "Purging genomes of contamination eliminates systematic bias from evolutionary analyses of ancestral genomes" manuscipt, with a pre-print copy available at https://biorxiv.org/cgi/content/short/2022.11.17.516887v1.
