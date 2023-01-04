@@ -1,4 +1,4 @@
-#docker build ./ --tag h836472/cs_test:latest
+#docker build ./ --tag h836472/contscout:latest
 FROM ubuntu:latest
 WORKDIR /data
 RUN \
