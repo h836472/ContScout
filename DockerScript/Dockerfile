@@ -69,6 +69,6 @@ RUN ln -s /opt/mmseqs_sse/mmseqs/bin/mmseqs /bin/mmseqs_sse2
 RUN rm mmseqs-linux*.gz
 #ADD ContScout Downloader and main scripts
 RUN wget https://github.com/h836472/ContScout/raw/main/R_scripts/ContScout
-RUN mv ContScout /usr/bin/ContScout && chmod u+x /usr/bin/ContScout
+RUN mv ContScout /usr/bin/ContScout && chmod a+x /usr/bin/ContScout
 RUN wget https://github.com/h836472/ContScout/raw/main/R_scripts/update_DataBases.R
-RUN mv update_DataBases.R /usr/bin/update_DataBases && chmod u+x /usr/bin/update_DataBases
+RUN mv update_DataBases.R /usr/bin/update_DataBases && chmod a+x /usr/bin/update_DataBases
