@@ -2,5 +2,5 @@
 This info is used when the tool checks for public database updates. 
   
 Format:  
-DB_Name,DB_URL
+DB_Name,DB_URL  
 $name_value,$URL_value
