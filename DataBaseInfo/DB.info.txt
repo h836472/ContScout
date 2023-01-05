@@ -1,3 +1,4 @@
+DB_Name,DB_URL
 ncbi_taxonomy,https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz.md5
 nr_prot,https://ftp.ncbi.nlm.nih.gov/blast/db/nr-prot-metadata.json
 refseq_prot,https://ftp.ncbi.nlm.nih.gov/blast/db/refseq_protein-prot-metadata.json
