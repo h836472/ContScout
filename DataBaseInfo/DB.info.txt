@@ -5,3 +5,4 @@ refseq_prot,https://ftp.ncbi.nlm.nih.gov/blast/db/refseq_protein-prot-metadata.j
 swissprot,https://ftp.ncbi.nlm.nih.gov/blast/db/swissprot-prot-metadata.json
 uniref100,https://ftp.expasy.org/databases/uniprot/current_release/uniref/uniref100/RELEASE.metalink
 uniprotKB,https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/RELEASE.metalink
+uniprotSP,https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/RELEASE.metalink
