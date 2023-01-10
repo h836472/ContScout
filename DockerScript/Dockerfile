@@ -70,5 +70,5 @@ RUN rm mmseqs-linux*.gz
 #ADD ContScout Downloader and main scripts
 RUN wget https://github.com/h836472/ContScout/raw/main/R_scripts/ContScout
 RUN mv ContScout /usr/bin/ContScout && chmod a+x /usr/bin/ContScout
-RUN wget https://github.com/h836472/ContScout/raw/main/R_scripts/update_DataBases.R
-RUN mv update_DataBases.R /usr/bin/update_DataBases && chmod a+x /usr/bin/update_DataBases
+RUN wget https://github.com/h836472/ContScout/raw/main/R_scripts/updateDB
+RUN mv updateDB /usr/bin/updateDB&& chmod a+x /usr/bin/updateDB
