@@ -1,6 +1,6 @@
 #!/usr/bin/Rscript
 
-byedie=function(x,log=TRUE,sure_q=TRUE)
+byedie=function(x,log=TRUE,sure_q=TRUE) #set FALSE for development, TRUE for production
 {
 cat(x)
 if(log)
@@ -70,9 +70,9 @@ if(FALSE)
 #manually set options, if needed for development
 opt=list()
 opt[["aligner"]]="diamond" # -a 
-opt[["userdir"]]="/data/databases" #-u 
+opt[["userdir"]]="/databases" #-u 
 opt[["cpu"]]=16 #-c 
-opt[["dbname"]]="demo" #-d 
+opt[["dbname"]]="swissprot" #-d 
 opt[["inputdir"]]="/data/ContScout_Develop2023/Quersube" # -i
 opt[["querytax"]]=58331 #-q 
 opt[["force"]]=FALSE
@@ -103,7 +103,7 @@ setwd(opt[["inputdir"]])
 #user dir check
 if(is.null(opt[["userdir"]]))
 {
-byedie("Please provide the path to your user directory with the pre-formatted reference databases.\n")
+byedie("Please provide the path to your user directory with the pre-formatted reference databases.\n If you do not have any local database yet, you can use the tool \'updateDB\'.")
 }
 
 #tmpdir check and set
@@ -132,9 +132,17 @@ if(is.null(opt[["dbname"]])&&!opt[["reuse_abc"]])
 byedie("Please provide the name of the reference database you wish to search against.\nYou can use -l switch to list pre-formatted database versions.\n")
 }
 
-if(!file.exists(paste0(opt[["userdir"]],"/db_inventory.txt")))
+
+
+#check if required reference databases exist
+#1., NCBI taxonomy
+#2., opt[["db.Name"]], in format matching opt[["aligner"]]
+
+
+
+if(!(file.exists(paste0(opt[["userdir"]],"/db_inventory.txt"))&&file.info(paste0(opt[["userdir"]],"/db_inventory.txt"))$size>0))
 {
-byedie(paste0("Could not find a database inventory file at ",'\"',opt[["userdir"]],'\".',"\n"," Please check that you have locally installed reference database and the path is accurate!"))
+byedie(paste0("Could not find a database inventory file at ",'\"',opt[["userdir"]],'\".',"\n"," Please check that you have locally installed reference database and the path is accurate!\n If needed, you can build a local reference database with tool \'updateDB\'."))
 }else{
 db.info=read.table(paste0(opt[["userdir"]],"/db_inventory.txt"),as.is=T,head=T)
 db.info=db.info[,c("db.Name","db.CRC","db.Loc","date","Format","is.Latest")]
@@ -149,6 +157,12 @@ db.loc.sel=db.info[db.info[,"db.Name"]==db.sel[[1]]&db.info[,"db.CRC"]==db.sel[[
 {
 db.loc.sel=db.info[db.info[,"db.Name"]==opt[["dbname"]]&db.info[,"is.Latest"]=="yes","db.Loc"]
 }
+
+if(is.null(ncol(db.loc.sel)) || ncol(db.loc.sel) !=1)
+{
+byedie(paste0("Error with local user database repository at \'",opt[["userdir"]],"\'","\nReference database \'",opt[["dbname"]],"\' not found in format \'",opt[["aligner"]],"\'.\nPlease check your local database directory.\nYou can automagically add new reference databases with the \'updateDB\' tool."))
+}
+
 }
 if (opt[["list_databases"]])
 {
@@ -157,6 +171,13 @@ db.info.s=split(db.info,db.info[,"db.Name"])
 res=lapply(names(db.info.s),function(x) {cat(x,"\n");db.print=db.info.s[[x]];db.print=db.print[,colnames(db.print)!="db.Loc"];print_screen(hux(db.print),colnames=FALSE)})
 q(save="no",status=0)
 }
+
+
+
+
+
+
+
 DropTax=tolower(unlist(strsplit(opt[["exclude_tax"]],"\\|")))
 
 if(!all(DropTax%in%c("all","viruses","bacteria","archaea","fungi","viridiplantae","metazoa","other_euk","none")))
