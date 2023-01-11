@@ -74,6 +74,10 @@ echo '#!/bin/sh' >>/usr/bin/jacksum && \
 echo 'java -jar "/opt/jacksum-3.5.0.jar" "$@"' >>/usr/bin/jacksum && \
 chmod a+x /usr/bin/jacksum
 
+#section to ensure that files are indeed pulled at build and NOT used from cache
+ARG CACHEBUST=1
+#at build, call an extra argument: --build-arg CACHEBUST=$(date +%s)
+
 #ADD ContScout Downloader and main scripts
 RUN wget https://github.com/h836472/ContScout/raw/main/R_scripts/ContScout
 RUN mv ContScout /usr/bin/ContScout && chmod a+x /usr/bin/ContScout
