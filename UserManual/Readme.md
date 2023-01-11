@@ -28,7 +28,7 @@ ContScout can be installed by
 * Singularity: singularity pull docker://h836472/contscout:latest
 (as a result of singularity pull, *contscout_latest.sif* file is generated. I will later refer to this file as "<cs_sif_file>".
 
-**Set up local reference databases**
+**Set up locally mirrored reference databases**
 
 The ContScout package contains an automated database updater tool that fetches, labels and pre-formats public protein databases, such as refseq, nr or uniprotKB. Taxonomical labeling is based on the taxonomy database from NCBI.  
 You can check the command line parameters of the tool from Docker / Singularity
@@ -37,9 +37,16 @@ You can check the command line parameters of the tool from Docker / Singularity
 
 Singularity example about installing uniprotKB database, pre-formatted for both MMSeqs and Diamond lookups  
   
-singularity exec -B <local_database_directory>:/databases -B <local_tmp_folder>:/cs_temp <singularity image> updateDB -u /databases --dbname uniprotKB -f MD 
+singularity exec -B <local_database_directory>:/databases -B <local_tmp_folder>:/cs_temp <singularity image> updateDB -u /databases --dbname uniprotKB -f MD -i https://github.com/h836472/ContScout/raw/main/DataBaseInfo/DB.info.txt"
   
-__*Please note*__: As part of any protein database installation, updateDB also downloads the latest NCBI Taxonomy database.
-
+__*Please note*__: While performing a protein database installation, updateDB also downloads the latest taxonomy database from NCBI.
+  Public databases are __*huge*__:, with compressed archives exceeding 50-80 GB. Depending on the network connection, download and the subsequent formatting steps will take several hours.
+  
+ **Set up your own local reference database**
+  
+Currently, there is no automated solution to turn your local protein fasta file into a reference database. However, a small-scale "demo" database is available for download as part of the GitHub package to guide you trough the format. 
+  First, it is recommended to download the latest NCBI taxonomy database by  
+  
+singularity exec -B <local_database_directory>:/databases -B <local_tmp_folder>:/cs_temp <singularity image> updateDB -u /databases --dbname ncbi_taxonomy -i https://github.com/h836472/ContScout/raw/main/DataBaseInfo/DB.info.txt"
 
 
