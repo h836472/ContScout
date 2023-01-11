@@ -67,6 +67,13 @@ RUN mkdir /opt/mmseqs_sse2
 RUN wget https://mmseqs.com/latest/mmseqs-linux-sse2.tar.gz; tar xvfz mmseqs-linux-sse2.tar.gz -C /opt/mmseqs_sse2;
 RUN ln -s /opt/mmseqs_sse/mmseqs/bin/mmseqs /bin/mmseqs_sse2
 RUN rm mmseqs-linux*.gz
+#ADD Jacksum
+RUN wget https://github.com/jonelo/jacksum/releases/download/v3.5.0/jacksum-3.5.0.jar  && \
+mv jacksum-3.5.0.jar /opt && \
+echo '#!/bin/sh' >>/usr/bin/jacksum && \
+echo 'java -jar "/opt/jacksum-3.5.0.jar" "$@"' >>/usr/bin/jacksum && \
+chmod a+x /usr/bin/jacksum
+
 #ADD ContScout Downloader and main scripts
 RUN wget https://github.com/h836472/ContScout/raw/main/R_scripts/ContScout
 RUN mv ContScout /usr/bin/ContScout && chmod a+x /usr/bin/ContScout
