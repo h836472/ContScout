@@ -212,7 +212,7 @@ return(!(!is.na(dbi.t[what,"info.MD5"])&&(info.refmd5==dbi.t[what,"info.MD5"] &&
 #local db file is lost
 }
 
-dl.ncbi_tax=function(wd=opt[["userdir"]],sd=workdir)
+dl.ncbi_tax=function(wd=opt[["userdir"]],sd=startdir)
 {
 setwd(wd)
 if(chk_update(wd=opt[["userdir"]],sd=workdir,what="ncbi_taxonomy",i=DBinfo))
