@@ -557,17 +557,15 @@ setwd(opt[["userdir"]])
 if(opt[["dbname"]]%in%c("nr_prot","refseq_prot","swissprot"))
 {
 dl.ncbi_blastdb(what=opt[["dbname"]])
-}else if(opt[["dbname"]]%in%c("uniref100","uniprotKB","uniprotSP"))
-{
+}else if(opt[["dbname"]]%in%c("uniref100","uniprotKB","uniprotSP")){
 dl.uniprot(what=opt[["dbname"]])
-}else if(opt[["dbname"]]=="ncbi_taxonomy")
-{
+}else if(opt[["dbname"]]=="ncbi_taxonomy"){
 dl.ncbi_tax()
-}
-else
+}else
 {
-byedie(paste0("Database \'",opt[["dbname"]],"\' is not recognized!)
+byedie(paste0("Database \'",opt[["dbname"]],"\' is not recognized!"))
 }
+
 
 
 
