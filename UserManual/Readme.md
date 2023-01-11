@@ -4,6 +4,24 @@ ContScout is a software designed to identify and remove foreign sequences that a
 As an additional improvement, coding site spatial information from annotation (gff/gtf file) is used to calculate a consensus taxon call over assemby contigs / scaffolds. Then, all proteins from contigs / scaffolds with conflicting taxon information are marked from removal.  
   
 __*Please note*__: with the current reference database taxon sampling, ContScout can only reliably differentiate between high level taxons, such as finding bacterial contamination in eukaryotes or identifying fungal contamination within plants. It is not designed for identifying contamination within a major eukaryote clade, such as identifying human contamination in an insect draft genome.  
-For more information about the tool, please check out the ContScout manuscript under https://www.biorxiv.org/content/10.1101/2022.11.17.516887v1.  
+For more information about the tool, please check out the ContScout manuscript under  
+https://www.biorxiv.org/content/10.1101/2022.11.17.516887v1.  
 
+**System requirements**
+
+ContScout is written in R language. Both the code and the external apps it depends on are designed to run in a Unix/Linux environment and was tested on Linux, although with containerization (Docker, Singularity) running the tool should run on a machine with Windows / MacOS as well...  
+
+External application as well as some ContScout components benefit from SMP multi-cpu machines and the system is written to automatically find the best vector instructions that the processor supports (avx2 >> sse4.1 >> sse2). ContScout requrires at least 128 GB of RAM and 500 GB of storage space but depending on the number of locally mirrored reference databases the storage footprint can easily reach 1-2 TB. There is a trade between allocated RAM and database search time where adding more RAM (256 GB, 512GB or 1 TB) significantly shortens the database lookup step.
+
+**Installation**
+
+ContScout can be installed by
+  
+(1) natively, after installing all pre-requisites. (Not recommended).  
+(2) as a Docker image, locally built based on the docker file provided at GitHub (Recommended for advanced users / developers)  
+* git clone https://github.com/h836472/ContScout.git
+* cd ContScout/DockerScript/
+* docker build ./ -t <your_container_tag>
+
+(3) as a Docker / Singularity image, pulled from dockerhub (generally recommended installation method)  
 
