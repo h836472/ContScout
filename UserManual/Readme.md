@@ -39,7 +39,7 @@ Singularity example about installing uniprotKB database, pre-formatted for both 
   
 singularity exec -B <local_database_directory>:/databases -B <local_tmp_folder>:/cs_temp <singularity image> updateDB -u /databases --dbname uniprotKB -f MD 
   
-*--Please note--*: when downloading a public protein database, the tool automatically downloads the latest NCBI Taxonomy database as well.
+__*Please note*__: As part of any protein database installation, updateDB also downloads the latest NCBI Taxonomy database.
 
 
 
