@@ -27,4 +27,13 @@ ContScout can be installed by
 * Docker: docker pull h836472/contscout:latest
 * Singularity: singularity pull docker://h836472/contscout:latest
 
-**Set up local referencedatabases**
+**Set up local reference databases**
+
+The ContScout package contains an automated database updater tool that fetches, labels and pre-formats public protein databases, such as refseq, nr or uniprotKB. Taxonomical labeling is based on the taxonomy database from NCBI.  
+You can check the command line parameters of the tool from Docker / Singularity
+* Docker: docker run h836472/contscout:latest updateDB -h
+* Singularity: singularity exec docker://h836472/contscout:latest updateDB -h
+
+Singularity example about installing uniprotKB database, pre-formatted for both MMSeqs and Diamond lookups  
+
+
