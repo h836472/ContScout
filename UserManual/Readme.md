@@ -25,5 +25,6 @@ ContScout can be installed by
 
 (3) as a Docker / Singularity image, pulled from dockerhub (generally recommended installation method)  
 * Docker: docker pull h836472/contscout:latest
-* Singularity: singularity pull dokcker://h836472/contscout:latest
+* Singularity: singularity pull docker://h836472/contscout:latest
 
+**Set up local referencedatabases**
