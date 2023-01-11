@@ -47,6 +47,5 @@ __*Please note*__: While performing a protein database installation, updateDB al
 Currently, there is no automated solution to turn your local protein fasta file into a reference database. However, a small-scale "demo" database is available for download as part of the GitHub package to guide you trough the format. 
   First, it is recommended to download the latest NCBI taxonomy database by  
   
-singularity exec -B <local_database_directory>:/databases <singularity image> updateDB -u /databases --dbname ncbi_taxonomy -i https://github.com/h836472/ContScout/raw/main/DataBaseInfo/DB.info.txt
-
+singularity exec -B <local_database_directory>:/databases contscout_latest.sif updateDB -u /databases --dbname ncbi_taxonomy -i https://github.com/h836472/ContScout/raw/main/DataBaseInfo/DB.info.txt
 
