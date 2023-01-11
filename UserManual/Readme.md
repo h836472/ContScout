@@ -17,7 +17,7 @@ External application as well as some ContScout components benefit from SMP multi
 
 ContScout can be installed by
   
-(1) natively, after installing all pre-requisites. (Not recommended).  
+(1) natively, after manually installing all pre-requisites. (Not recommended, please contact the authors if you have to install the tool this way).  
 (2) as a Docker image, locally built based on the docker file provided at GitHub (Recommended for advanced users / developers)  
 * git clone https://github.com/h836472/ContScout.git
 * cd ContScout/DockerScript/
@@ -26,14 +26,17 @@ ContScout can be installed by
 (3) as a Docker / Singularity image, pulled from dockerhub (generally recommended installation method)  
 * Docker: docker pull h836472/contscout:latest
 * Singularity: singularity pull docker://h836472/contscout:latest
+(as a result of singularity pull, *contscout_latest.sif* file is generated. I will later refer to this file as "<cs_sif_file>".
 
 **Set up local reference databases**
 
 The ContScout package contains an automated database updater tool that fetches, labels and pre-formats public protein databases, such as refseq, nr or uniprotKB. Taxonomical labeling is based on the taxonomy database from NCBI.  
 You can check the command line parameters of the tool from Docker / Singularity
 * Docker: docker run h836472/contscout:latest updateDB -h
-* Singularity: singularity exec docker://h836472/contscout:latest updateDB -h
+* Singularity: singularity exec <cs_sif_file> updateDB -h
 
 Singularity example about installing uniprotKB database, pre-formatted for both MMSeqs and Diamond lookups  
+singularity exec -B <local_database_directory>:/databases -B <local_tmp_folder>:/cs_temp <singularity image> bash
+
 
 
