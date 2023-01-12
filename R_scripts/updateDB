@@ -353,6 +353,7 @@ chunk=matrix(chunk,byrow=T,ncol=4)
 nprot=nrow(chunk)
 chunk[,2]=paste0("t",chunk[,2])
 chunk=cbind(chunk,taxDB[chunk[,2]])
+chunk[is.na(chunk[,5]),5]="TaxMissingNCBI"  
 new.header=paste0(chunk[,1],":",chunk[,2],":",chunk[,5]," ",chunk[,3])
 new.fasta=c(rbind(new.header,chunk[,4]))
 write.table(new.fasta,paste0("tmp/",timestamp,"/",timestamp,"_tax.fasta"),append=T,quote=F,row.names=F,col.names=F)
@@ -491,6 +492,7 @@ chunk.taxid=gsub(" .+","",chunk.taxid)
 chunk.id=gsub(" .+$","",chunk[headers])
 chunk.comment=gsub("^\\S+ ","",chunk[headers])
 chunk.taxtext=taxDB[chunk.taxid]
+chunk.taxtext[is.na(chunk.taxtext)]="TaxMissingNCBI"
 newheaders=paste0(chunk.id,":",chunk.taxid,":",chunk.taxtext," ",chunk.comment)
 chunk[headers]=newheaders
 write.table(chunk,paste0("tmp/",timestamp,"/",what,"_",info.data.decode[[1]][["version"]],"_tax.tmp"),append=T,quote=F,row.names=F,col.names=F)
