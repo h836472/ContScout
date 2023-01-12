@@ -71,7 +71,7 @@ DBinfo=read.table(opt[["info"]],sep=",",as.is=T,row.name=1,header=T)
 ###################################
 #generic logging and info functions
 ###################################
-byedie=function(x,log=TRUE,sure_q=FALSE){
+byedie=function(x,log=TRUE,sure_q=TRUE){
 cat(x)
 if(log)
  {
