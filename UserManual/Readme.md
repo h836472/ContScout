@@ -44,8 +44,18 @@ __*Please note*__: While performing a protein database installation, updateDB al
   
  **Set up your own local reference database**
   
-Currently, there is no automated solution to turn your local protein fasta file into a reference database. However, a small-scale "demo" database is available for download as part of the GitHub package to guide you trough the format. 
-  First, it is recommended to download the latest NCBI taxonomy database by  
+Currently, there is no automated solution to turn your local protein fasta file into a reference database. However, a small-scale "demo" database is available for download at the GitHub repository under the Example folder that can be used as a guide regarding the file formats. 
+First, it is recommended to download the latest NCBI taxonomy database by  
   
 singularity exec -B <local_database_directory>:/databases contscout_latest.sif updateDB -u /databases --dbname ncbi_taxonomy -i https://github.com/h836472/ContScout/raw/main/DataBaseInfo/DB.info.txt
+
+Then, please add the taxonomy information to the fasta headers of your reference file using the format below:  
+  
+>{Accession_Number}:t{TaxonID}:{HighLevelTaxonName} <Description>  
+Example:
+*>**UniRef100_UPI00156F6715**:**t287**:**Bacteria** major capsid protein n=1 Tax=Pseudomonas aeruginosa TaxID=287 RepID=UPI00156F6715*
+Please use either MMSeqs or DIAMOND to convert your reference database into search databases. (mmseqs createdb ... , DIAMOND makedb ...)
+Copy the reference databases to your local database repository using the folder structure similar to the "demo" database uploaded 
+
+
 
