@@ -53,7 +53,7 @@ Then, please add the taxonomy information to the fasta headers of your reference
   
 \>{Accession_Number}:t{TaxonID}:{HighLevelTaxonName} <Description>  
 Example:  
->__UniRef100_UPI00156F6715__:__t287__:__Bacteria__ major capsid protein n=1 Tax=Pseudomonas aeruginosa TaxID=287 RepID=UPI00156F6715*
+\>__UniRef100_UPI00156F6715__:__t287__:__Bacteria__ major capsid protein n=1 Tax=Pseudomonas aeruginosa TaxID=287 RepID=UPI00156F6715*
 Please use either MMSeqs or DIAMOND to convert your reference database into search databases. (mmseqs createdb ... , DIAMOND makedb ...)
 Copy the reference databases to your local database repository using the folder structure similar to the "demo" database uploaded 
 
