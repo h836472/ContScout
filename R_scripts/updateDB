@@ -168,7 +168,7 @@ opt[["IO_cpu"]]=min(opt[["cpu"]],8)
 info(paste0("Using ",opt[["cpu"]]," CPUs for general tasks and ",opt[["IO_cpu"]]," CPUs for IO operations.\n"))
 
 
-opt[["dbname"]]=match.arg(opt[["dbname"]],c("ncbi_taxonomy","nr_prot","refseq_prot","uniprotKB","uniref100","swissprot"))
+opt[["dbname"]]=match.arg(opt[["dbname"]],c("ncbi_taxonomy","nr_prot","refseq_prot","uniprotKB","uniref100","swissprot","uniprotSP"))
 
 
 if(!("ncbi_taxonomy"%in%rownames(DBinfo) && opt[["dbname"]]%in% rownames(DBinfo)))
@@ -541,7 +541,6 @@ ans=user.input("Do you want to create it now and proceed with a clean database i
  {
  byedie(paste0('Download of \"',opt[["dbname"]],'\"'," database was cancelled by user.\n"))
  }
-stop("Database download failed!")
 }
 
 dbd.df=system(paste0("df -P ",opt[["userdir"]]," -B 1G ",opt[["userdir"]]),intern=T)[2]
