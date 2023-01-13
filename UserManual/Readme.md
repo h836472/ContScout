@@ -79,18 +79,16 @@ The following tutorial will guide you trough the analysis of an ultra-light exam
 
 Steps
   
-1., create a work directory with subfolders (change directory path according to your system)
+1., create a work directory (change directory path according to your system)
   >mkdir /data/CS_test  
   >cd /data/CS_test  
-  >mkdir local_database  
-  >mkdir query  
   
  2., download and extract the database as well as the draft genome file for the tutorial
  >wget https://github.com/h836472/ContScout/raw/main/Example/database.tar.gz  
- >tar -xvf database.tar.gz -C local_database  
+ >tar -xvf database.tar.gz 
  >rm database.tar.gz  
  >wget https://github.com/h836472/ContScout/raw/main/Example/query.tar.gz  
- >tar -xvf query.tar.gz -C query  
+ >tar -xvf query.tar.gz 
  >rm query.tar.gz 
 
 Please take some time to familiarize yourself with the organization of the local repository database (file ***database/db_inventory.txt*** and database subfolders) and especially with the layout of the query data (***query/Quersube***).   
