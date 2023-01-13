@@ -88,8 +88,8 @@ Steps
  >tar -xvf database.tar.gz 
  >rm database.tar.gz  
  >wget https://github.com/h836472/ContScout/raw/main/Example/query.tar.gz  
- >tar -xvf query.tar.gz 
- >rm query.tar.gz 
+ >tar -xvf query.tar.gz  
+ >rm query.tar.gz   
 
 Please take some time to familiarize yourself with the organization of the local repository database (file ***database/db_inventory.txt*** and database subfolders) and especially with the layout of the query data (***query/Quersube***).   
 Your input files shall be copied in a single query directory  (***query/Quersube/***) with the protein fasta copied under "FASTA_prot" and the annotation file copied under "GFF_annot" subfolder, respectively. Both gzip-comressed and uncompressed fasta and gff/gtf files are accepted.  
