@@ -44,7 +44,7 @@ __*Please note*__: While performing a protein database installation, updateDB al
   
  **Set up your own local reference database**
   
-Currently, there is no automated solution to turn your local protein fasta file into a reference database. However, a small-scale "demo" database is available for download at the GitHub repository under the Example folder that can be used as a guide regarding the file formats. 
+Currently, there is no automated solution to turn your local protein fasta file into a reference database. However, a small-scale "demo" database is available as an example for download at the GitHub repository under the Example folder and can be used as a guide regarding the file formats. 
 First, it is recommended to download the latest NCBI taxonomy database by  
   
 singularity exec -B <local_database_directory>:/databases contscout_latest.sif updateDB -u /databases --dbname ncbi_taxonomy -i https://github.com/h836472/ContScout/raw/main/DataBaseInfo/DB.info.txt
@@ -55,9 +55,14 @@ Then, please add the taxonomy information to the fasta headers of your reference
 **Example:**  
 \>*UniRef100_UPI00156F6715*:*t287*:_Bacteria_ major capsid protein n=1 Tax=Pseudomonas aeruginosa TaxID=287 RepID=UPI00156F6715  
   
-Please use either MMSeqs or DIAMOND to convert your reference database into search databases. (mmseqs createdb ... , DIAMOND makedb ...)
+Please use MMSeqs or DIAMOND to convert your reference database into search databases. (mmseqs createdb ... , DIAMOND makedb ...)
 Copy the reference databases to your local database repository using the folder structure similar to the "demo" database provied as an example.
  
+Then, reguster each of your custom databases by adding a new line in the *db_inventory.txt* file within your local database repository.
+For manually added databases, the minimum required fields are "db.Name", "db.Loc", and "Format". Please check the *db_inventory.txt* file in the example set as a reference.
+
+Later this year, a conversion tool, similar to updateDB, shall be released that automates user database addition.
+
 
 
 
