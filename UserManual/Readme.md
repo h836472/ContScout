@@ -99,7 +99,10 @@ Your input files shall be copied in a single query directory  (***query/Quersube
 Download and prepare ContScout image for Singularity  
 >mkdir singularity_images  
 >cd singularity_images  
->singularity pull h836472/contscout:latest  
+>singularity pull docker://h836472/contscout:latest  
+>cd ..  
+ 
+ 
    
   
   
