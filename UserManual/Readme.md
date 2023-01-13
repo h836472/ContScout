@@ -118,7 +118,18 @@ Detailed explanation of ContScout parameters in the example above:
   
   When ready, ContScout creates an output directory within the folder that was specidied by the user via the -i parameter. Output folder follows the following scheme: ***{species\_latin\_name}\_tax\_{taxonID}\_{timestamp}***. Example: ***Quercus\_suber\_tax\_58331\_13Jan_2023_18_34***.
   
-
+Description of the output files  
+  - ***Cleaned.ProteinSeq.faa*** contains proteins that were kept by the filter (proteins without conflicting taxon data)  
+  - ***Contamination.ProteinSeq.faa*** contains proteins that were tagged as contamination and were removed from the input fata  
+  - ***Ghost.ProteinSeq.faa*** contains proteins that are present in the input fasta file but are not mentioned in the gff / gtf annotation  
+  - ***Contscout_{timestamp}.log is a log file with running parameters and messages from ContScout
+  - ***various ".RDS" files are generated with saved intermediate data. All of them are in R data file format, and can be opened with readRDS() in R.
+  
+ Fasta headers in file in ***Contamination.ProteinSeq.faa*** contain information regarding the removed proteins in the following format:   
+ \>{ID} ProtTag:{protein_taxon_call}\|ContigTag:{contig_level_taxon_call}\|CtgNumProt:{number_of_proteins_on_removed_contig}
+  \>XP_023876615.1 ProtTag:fungi|ContigTag:fungi|CtgNumProt:67
+  
+      
   
   
   
