@@ -1,4 +1,4 @@
-**Summary**
+*Summary**
 
 ContScout is a software designed to identify and remove foreign sequences that appear in draft genomes as a consequence of contamination. The tool uses fast sequence lookup tools (MMSeqs or DIAMOND) to get taxonomical data for each predicted protein from a user-selected reference protein database (examples: uniprotKB, nr, refseq). As a major improvement over previous methods that rely on reference database and use a user-selected similarity threshold, ContScout applies a dynamic trimming on each hit list extracting the best-scoring hits that are most relevant when trying to classify proteins.
 As an additional improvement, coding site spatial information from annotation (gff/gtf file) is used to calculate a consensus taxon call over assemby contigs / scaffolds. Then, all proteins from contigs / scaffolds with conflicting taxon information are marked from removal.  
@@ -52,7 +52,7 @@ singularity exec -B <local_database_directory>:/databases contscout_latest.sif u
 Then, please add the taxonomy information to the fasta headers of your reference file using the format below:  
   
 \>{*Accession_Number*}:*t{TaxonID}*:_{HighLevelTaxonName}_ <Description>  
-**Example:**  
+Example:   
 \>*UniRef100_UPI00156F6715*:*t287*:_Bacteria_ major capsid protein n=1 Tax=Pseudomonas aeruginosa TaxID=287 RepID=UPI00156F6715  
   
 Please use MMSeqs or DIAMOND to convert your reference database into search databases. (mmseqs createdb ... , DIAMOND makedb ...)
