@@ -93,6 +93,8 @@ Steps
  >tar -xvf query.tar.gz -C test_query  
  >rm query.tar.gz 
 
- 
+Please take a second to familiarize yourself with the organization of the local repository database (file ***database/db_inventory.txt*** and database subfolders) and especially with the suggested format of the query data (***query/Quersube***)
+  
+  
 
 
