@@ -90,7 +90,7 @@ Steps
  >tar -xvf database.tar.gz -C local_database  
  >rm database.tar.gz  
  >wget https://github.com/h836472/ContScout/raw/main/Example/query.tar.gz  
- >tar -xvf query.tar.gz -C test_query  
+ >tar -xvf query.tar.gz -C query  
  >rm query.tar.gz 
 
 Please take some time to familiarize yourself with the organization of the local repository database (file ***database/db_inventory.txt*** and database subfolders) and especially with the layout of the query data (***query/Quersube***).   
