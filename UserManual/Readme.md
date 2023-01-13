@@ -103,6 +103,8 @@ Your input files shall be copied in a single query directory  (***query/Quersube
 4., Start ContScout via a Singularity call
 >singularity exec -B /data/CS_test/databases:/databases -B /data/CS_test/query:/query -B /tmp:/cs_temp /data/CS_test/singularity_images/contscout_latest.sif ContScout -u /databases -i /query/Quersube -q 58331 -c 2 -x all -p 20 -t CS_temp  
   
+Please be aware that we encounter difficulties while trying to update the GitHub repository with latest demo database and ContScout script. As a consequence, commands in this tutorial are likely to fail. Sorry for the invonvenience.
+  
    
   
   
