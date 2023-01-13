@@ -101,9 +101,27 @@ Your input files shall be copied in a single query directory  (***query/Quersube
 >cd ..  
  
 4., Start ContScout via a Singularity call
->singularity exec -B /data/CS_test/databases:/databases -B /data/CS_test/query:/query -B /tmp:/cs_temp /data/CS_test/singularity_images/contscout_latest.sif ContScout -u /databases -i /query/Quersube -q 58331 -c 2 -x all -p 20 -t CS_temp -d demo 
+>singularity exec -B /data/CS_test/databases:/databases -B /data/CS_test/query:/query -B /tmp:/cs_temp /data/CS_test/singularity_images/contscout_latest.sif ContScout -u /databases -i /query/Quersube -q 58331 -c 2 -x all -p 20 -t CS_temp -d demo -a mmseqs
 
-   
+Please note  the ***-B host:guest*** mount parameter in the singularity call. Each instance adds an existing host directory to the ContScount container under the guest directory as specified. It is recommended, that -whenever feasible- the guest directories are directly used when ContScout command line parameters are configured. For an example see -B /tmp:/cs_temp singularity parameter followed by ContScout parameter -t CS_temp.
+  
+Detailed explanation of ContScout parameters in the example above:
+  - -u (user directory) path to the folder, where the local reference database is stored
+  - -i (input directory) path to the directory with the query data (contains subfolders FASTA_prot and GFF_annot)
+  - -q the expected NCBI taxon ID of the query genome. Corresponds to the sequenced species that we screen for contamination.
+  - -c number of CPU-s to use (affects mainly the alignment step)
+  - -x which group to filter out (accepted values are: all, viruses, bacteria, archaea, fungi, viridiplantae, metazoa, other_euk)
+  - -p minimum percentage of identity required for a hit to be considered in the hit list. This filter preceedes dynamic trimming.
+  - -t location of the temporary folder. 
+  - -d name of the database to be used
+  - -a algorithm to be used for database lookup (mmseqs or diamond)
+  
+  Once ContScout finishes, an output directory is automatically generated within the folder that was specidied via the -i parameter.  
+  Output folder naming follows the following scheme: {species_latin_name}_tax_{taxonID}_{timestamp}. Example: Quercus_suber_tax_58331_13Jan_2023_18_34.
+  
+
+  
+  
   
   
 
