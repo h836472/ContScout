@@ -79,11 +79,11 @@ The following tutorial will guide you trough the analysis of an ultra-light exam
 
 Steps
   
-1., create a work directory (change directory path according to your system)
-  >mkdir /data/CS_test
-  >cd /data/CS_test
-  >mkdir local_database
-  >mkdir test_query
+1., create a work directory with subfolders (change directory path according to your system)
+  >mkdir /data/CS_test  
+  >cd /data/CS_test  
+  >mkdir local_database  
+  >mkdir test_query  
   
   
 
