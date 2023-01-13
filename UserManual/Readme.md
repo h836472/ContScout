@@ -21,7 +21,7 @@ ContScout can be installed by
 (2) as a Docker image, locally built based on the docker file provided at GitHub (Recommended for advanced users / developers)  
 * git clone https://github.com/h836472/ContScout.git
 * cd ContScout/DockerScript/
-* docker build ./ -t <your_container_tag>
+* docker build ./ -t <your_container_tag> --build-arg CACHEBUST=$(data+%s)
 
 (3) as a Docker / Singularity image, pulled from dockerhub (generally recommended installation method)  
 * Docker: docker pull h836472/contscout:latest
