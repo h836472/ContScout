@@ -92,9 +92,7 @@ Steps
  wget https://github.com/h836472/ContScout/raw/main/Example/query.tar.gz
  tar -xvf query.tar.gz -C test_query
  rm query.tar.gz
- <
-  
-  hali
+
  
 
 
