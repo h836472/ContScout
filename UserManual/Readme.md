@@ -51,9 +51,9 @@ singularity exec -B <local_database_directory>:/databases contscout_latest.sif u
 
 Then, please add the taxonomy information to the fasta headers of your reference file using the format below:  
   
-\>***{Accession_Number}***:***t{TaxonID}***:***{HighLevelTaxonName}*** {Description}  
+\>***{Accession_Number}***:***t{TaxonID}***:***{HighLevelTaxonName}*** ***{Description}***  
 Example:   
-\>***UniRef100_UPI00156F6715***:***t287***:_***Bacteria***_ major capsid protein n=1 Tax=Pseudomonas aeruginosa TaxID=287 RepID=UPI00156F6715  
+\>***UniRef100_UPI00156F6715***:***t287***:***Bacteria*** major capsid protein n=1 Tax=Pseudomonas aeruginosa TaxID=287 RepID=UPI00156F6715  
   
 Please use MMSeqs or DIAMOND to convert your reference database into search databases. (mmseqs createdb ... , DIAMOND makedb ...)
 Copy the reference databases to your local database repository using the folder structure similar to the "demo" database provied as an example.
