@@ -85,7 +85,7 @@ Steps
   
  2., download and extract the database as well as the draft genome file for the tutorial
  >wget https://github.com/h836472/ContScout/raw/main/Example/database.tar.gz  
- >tar -xvf database.tar.gz 
+ >tar -xvf database.tar.gz  
  >rm database.tar.gz  
  >wget https://github.com/h836472/ContScout/raw/main/Example/query.tar.gz  
  >tar -xvf query.tar.gz  
