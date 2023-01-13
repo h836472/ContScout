@@ -126,7 +126,8 @@ Description of the output files
   - ***various ".RDS" files are generated with saved intermediate data. All of them are in R data file format, and can be opened with readRDS() in R.
   
  Fasta headers in file in ***Contamination.ProteinSeq.faa*** contain information regarding the removed proteins in the following format:   
- \>{ID} ProtTag:{protein_taxon_call}\|ContigTag:{contig_level_taxon_call}\|CtgNumProt:{number_of_proteins_on_removed_contig}
+ \>{ID} ProtTag:{protein_taxon_call}\|ContigTag:{contig_level_taxon_call}\|CtgNumProt:{number_of_proteins_on_removed_contig}  
+  Example:  
   \>XP_023876615.1 ProtTag:fungi|ContigTag:fungi|CtgNumProt:67
   
       
