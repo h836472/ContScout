@@ -103,7 +103,7 @@ Your input files shall be copied in a single query directory  (***query/Quersube
 4., Start ContScout via a Singularity call
 >singularity exec -B /data/CS_test/databases:/databases -B /data/CS_test/query:/query -B /tmp:/cs_temp /data/CS_test/singularity_images/contscout_latest.sif ContScout -u /databases -i /query/Quersube -q 58331 -c 2 -x all -p 20 -t CS_temp -d demo -a mmseqs
 
-Please note  the ***-B host:guest*** mount parameter in the singularity call. Each instance adds an existing host directory to the ContScount container under the guest directory as specified. It is recommended, that -whenever feasible- the guest directories are directly used when ContScout command line parameters are configured. For an example see -B /tmp:/cs_temp singularity parameter followed by ContScout parameter -t CS_temp.
+Please notice the singularity "bind directory" commands, that are written in ***-B host:guest*** format. Each of them adds an existing host directory to the ContScount container with the guest directory name as specified. It is recommended, that singularity bind parameters are carefully matched with ContScout parameters. For an example see ***-B /tmp:/cs_temp singularity*** later parameter followed by ContScout parameter ***-t CS_temp***.
   
 Detailed explanation of ContScout parameters in the example above:
   - **-u** (user directory) path to the folder, where the local reference database is stored
