@@ -9,13 +9,13 @@ RUN \
         python3-dev          \
         wget              && \
     apt-get clean all
-RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata
-RUN apt-get install --yes libcurl4-openssl-dev libxml2-dev libssl-dev libmagick++-dev libcairo2-dev curl \
+RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata &&\
+apt-get install --yes libcurl4-openssl-dev libxml2-dev libssl-dev libmagick++-dev libcairo2-dev curl \
 liblzma-dev libblas-dev aptitude libreadline-dev default-jdk cmake ncbi-blast+
-RUN ncpu=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}')
-RUN curl -O https://cran.rstudio.com/src/base/R-4/R-4.1.2.tar.gz
-RUN tar -xzvf R-4.1.2.tar.gz 
-RUN cd R-4.1.2 &&\
+RUN ncpu=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}') &&\
+curl -O https://cran.rstudio.com/src/base/R-4/R-4.1.2.tar.gz &&\
+tar -xzvf R-4.1.2.tar.gz &&\
+cd R-4.1.2 &&\
     ./configure \
     --prefix=/opt/R/4.1.2 \
     --enable-memory-profiling \
@@ -24,12 +24,15 @@ RUN cd R-4.1.2 &&\
     --with-lapack=\
     --with-x=no &&\
 make -j $ncpu &&\
-make -j $ncpu install
-RUN cd ..
-RUN rm -r R-4.1.2
-RUN rm R-4.1.2.tar.gz 
-RUN ln -s /opt/R/4.1.2/bin/R /usr/bin/R
-RUN ln -s /opt/R/4.1.2/bin/Rscript /usr/bin/Rscript
+make -j $ncpu install &&\
+cd .. &&\
+rm -r R-4.1.2 &&\
+rm R-4.1.2.tar.gz &&\
+ln -s /opt/R/4.1.2/bin/R /usr/bin/R &&\
+ln -s /opt/R/4.1.2/bin/Rscript /usr/bin/Rscript&&\
+mkdir ~/.R
+echo 'MAKEFLAGS = -j4' >~/.R/Makevars
+
 RUN \
     R -e "if(!require('optparse',quietly=TRUE)) {install.packages('optparse',dependencies=TRUE,repos='http://cran.rstudio.com/')}" && \
     R -e "if(!require('bitops',quietly=TRUE)) {install.packages('bitops',dependencies=TRUE,repos='http://cran.rstudio.com/')}" && \
