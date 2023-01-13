@@ -51,7 +51,7 @@ singularity exec -B <local_database_directory>:/databases contscout_latest.sif u
 
 Then, please add the taxonomy information to the fasta headers of your reference file using the format below:  
   
-\>***{Accession_Number}***:***t{TaxonID}***:***{HighLevelTaxonName}*** ***{Description}***  
+\>***{Accession_Number}***:***t{TaxonID}***:***{HighLevelTaxonName}*** {Optional_description}
 Example:   
 \>***UniRef100_UPI00156F6715***:***t287***:***Bacteria*** major capsid protein n=1 Tax=Pseudomonas aeruginosa TaxID=287 RepID=UPI00156F6715  
   
