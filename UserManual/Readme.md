@@ -96,13 +96,15 @@ Steps
 Please take some time to familiarize yourself with the organization of the local repository database (file ***database/db_inventory.txt*** and database subfolders) and especially with the layout of the query data (***query/Quersube***).   
 Your input files shall be copied in a single query directory  (***query/Quersube/***) with the protein fasta copied under "FASTA_prot" and the annotation file copied under "GFF_annot" subfolder, respectively. Both gzip-comressed and uncompressed fasta and gff/gtf files are accepted.  
  
-Download and prepare ContScout image for Singularity  
+3., Download and prepare ContScout image for Singularity  
 >mkdir singularity_images  
 >cd singularity_images  
 >singularity pull docker://h836472/contscout:latest  
 >cd ..  
  
- 
+4., Start ContScout via a Singularity call
+>singularity exec -B /data/CS_test/local_database/database:/database -B /data/CS_test/local_database/query:/query -B /tmp:cs_temp /data/CS_test/singularity_images/contscout_latest.sif ContScout -u /database -i /query -q 58331 -c 2 -x all -p 20 -t CS_temp  
+  
    
   
   
