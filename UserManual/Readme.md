@@ -83,7 +83,7 @@ Steps
   >mkdir /data/CS_test  
   >cd /data/CS_test  
   >mkdir local_database  
-  >mkdir test_query  
+  >mkdir query  
   
  2., download and extract the database as well as the draft genome file for the tutorial
  >wget https://github.com/h836472/ContScout/raw/main/Example/database.tar.gz  
