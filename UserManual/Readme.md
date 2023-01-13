@@ -116,7 +116,7 @@ Detailed explanation of ContScout parameters in the example above:
   - **-d** name of the database to be used
   - **-a** algorithm to be used for database lookup (mmseqs or diamond)
   
-  When ready, ContScout creates an output directory within the folder that was specidied by the user via the -i parameter. Output folder follows the following scheme: ***{species_latin_name}_tax_{taxonID}_{timestamp}***. Example: ***Quercus_suber_tax_58331_13Jan_2023_18_34***.
+  When ready, ContScout creates an output directory within the folder that was specidied by the user via the -i parameter. Output folder follows the following scheme: ***{species\_latin\_name}\_tax\_{taxonID}\_{timestamp}***. Example: ***Quercus\_suber\_tax\_58331\_13Jan_2023_18_34***.
   
 
   
