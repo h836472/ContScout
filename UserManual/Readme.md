@@ -93,8 +93,15 @@ Steps
  >tar -xvf query.tar.gz -C test_query  
  >rm query.tar.gz 
 
-Please take some time to familiarize yourself with the organization of the local repository database (file ***database/db_inventory.txt*** and database subfolders) and especially with the layout of the query data (***query/Quersube***). Your input files shall be copied in a single query directory  (***query/Quersube/***) with the protein fasta copied under "FASTA_prot" and the annotation file copied under "GFF_annot" subfolder, respectively.
-Both gzip-comressed and uncompressed fasta and gff/gtf files are accepted.  
+Please take some time to familiarize yourself with the organization of the local repository database (file ***database/db_inventory.txt*** and database subfolders) and especially with the layout of the query data (***query/Quersube***).   
+Your input files shall be copied in a single query directory  (***query/Quersube/***) with the protein fasta copied under "FASTA_prot" and the annotation file copied under "GFF_annot" subfolder, respectively. Both gzip-comressed and uncompressed fasta and gff/gtf files are accepted.  
+ 
+Download and prepare ContScout image for Singularity  
+>mkdir singularity_images  
+>cd singularity_images  
+>singularity pull h836472/contscout:latest  
+   
+  
   
 
   
