@@ -84,14 +84,14 @@ Steps
   >cd /data/CS_test  
   
  2., download and extract the database as well as the draft genome file for the tutorial
- >wget https://github.com/h836472/ContScout/raw/main/Example/database.tar.gz  
- >tar -xvf database.tar.gz  
- >rm database.tar.gz  
+ >wget https://github.com/h836472/ContScout/raw/main/Example/databases.tar.gz  
+ >tar -xvf databases.tar.gz  
+ >rm databases.tar.gz  
  >wget https://github.com/h836472/ContScout/raw/main/Example/query.tar.gz  
  >tar -xvf query.tar.gz  
  >rm query.tar.gz   
 
-Please take some time to familiarize yourself with the organization of the local repository database (file ***database/db_inventory.txt*** and database subfolders) and especially with the layout of the query data (***query/Quersube***).   
+Please take some time to familiarize yourself with the organization of the local repository database (file ***databases/db_inventory.txt*** and database subfolders) and especially with the layout of the query data (***query/Quersube***).   
 Your input files shall be copied in a single query directory  (***query/Quersube/***) with the protein fasta copied under "FASTA_prot" and the annotation file copied under "GFF_annot" subfolder, respectively. Both gzip-comressed and uncompressed fasta and gff/gtf files are accepted.  
  
 3., Download and prepare ContScout image for Singularity  
@@ -101,7 +101,7 @@ Your input files shall be copied in a single query directory  (***query/Quersube
 >cd ..  
  
 4., Start ContScout via a Singularity call
->singularity exec -B /data/CS_test/database:/database -B /data/CS_test/query:/query -B /tmp:/cs_temp /data/CS_test/singularity_images/contscout_latest.sif ContScout -u /database -i /query/Quersube -q 58331 -c 2 -x all -p 20 -t CS_temp  
+>singularity exec -B /data/CS_test/databases:/databases -B /data/CS_test/query:/query -B /tmp:/cs_temp /data/CS_test/singularity_images/contscout_latest.sif ContScout -u /databases -i /query/Quersube -q 58331 -c 2 -x all -p 20 -t CS_temp  
   
    
   
