@@ -29,8 +29,8 @@ cd .. &&\
 rm -r R-4.1.2 &&\
 rm R-4.1.2.tar.gz &&\
 ln -s /opt/R/4.1.2/bin/R /usr/bin/R &&\
-ln -s /opt/R/4.1.2/bin/Rscript /usr/bin/Rscript&&\
-mkdir ~/.R
+ln -s /opt/R/4.1.2/bin/Rscript /usr/bin/Rscript &&\
+mkdir ~/.R &&\
 echo 'MAKEFLAGS = -j4' >~/.R/Makevars
 
 RUN \
