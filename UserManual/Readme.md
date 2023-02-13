@@ -130,7 +130,7 @@ Detailed explanation of ContScout parameters:
   - **-r** skip the database search and reuse ABC file from previous run if possible
   - **-n** perform the analysis without using any GFF/GTF annotation file
   - **-s** MMSeqs sensitivity parameter [default: 2]
-  - **-x** which group to filter out [default: all] further accepted values are: viruses, bacteria, archaea, fungi, viridiplantae, metazoa, other_euk
+  - **-x** which group to filter out. Possible values: (all, viruses, bacteria, archaea, fungi, viridiplantae, metazoa, other_euk) [default:all]
   - **-p** minimum percentage of sequence identity required. This filter preceedes dynamic trimming. [default: 20]
   - **-t** location of the temporary folder. 
   - **-a** algorithm to be used for database lookup (mmseqs or diamond)
