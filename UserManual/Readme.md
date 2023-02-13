@@ -111,7 +111,7 @@ Detailed explanation of ContScout parameters in the example above:
   - **-q** the expected NCBI taxon ID of the query genome. Corresponds to the sequenced species that we screen for contamination.
   - **-c** number of CPU-s to use (affects mainly the alignment step)
   - **-x** which group to filter out (accepted values are: all, viruses, bacteria, archaea, fungi, viridiplantae, metazoa, other_euk)
-  - **-p** minimum percentage of identity required for a hit to be considered in the hit list. This filter preceedes dynamic trimming.
+  - **-p** minimum percentage of sequence identity required. This filter preceedes dynamic trimming. [Default value: 20]
   - **-t** location of the temporary folder. 
   - **-d** name of the database to be used
   - **-a** algorithm to be used for database lookup (mmseqs or diamond)
