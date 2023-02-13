@@ -119,7 +119,7 @@ Description of the output files
   Example:  
   \>XP_023876615.1 ProtTag:fungi|ContigTag:fungi|CtgNumProt:67
   
-Detailed explanation of ContScout parameters:
+Explanation of ContScout parameters:
   - **-h** displays help message
   - **-u** (user directory) path to the folder, where the local reference database is stored
   - **-c** number of CPU-s to use (affects mainly the alignment step)
