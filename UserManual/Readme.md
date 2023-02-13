@@ -67,7 +67,7 @@ For manually added databases, the minimum required fields are "db.Name", "db.Loc
 
 Later this year, a conversion tool, similar to updateDB, shall be released that automates user database addition.
   
-**Running perform run ContScout**
+**Running ContScout**
 
 In order to run the tool, you will need  
 - a containerization environment, capable of running Docker images (Docker, Singularity, Shifter, etc)
