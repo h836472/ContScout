@@ -37,12 +37,12 @@ You can check the command line parameters of the tool from Docker / Singularity
 
 Singularity example installing uniprotKB database, pre-formatted for both MMSeqs and Diamond lookups  
   
-singularity exec -B <local_database_directory>:/databases -B <local_tmp_folder>:/tmp <singularity image> updateDB -u /databases --dbname uniprotKB -f MD -i https://github.com/h836472/ContScout/raw/main/DataBaseInfo/DB.info.txt"
+>singularity exec -B <local_database_directory>:/databases -B <local_tmp_folder>:/tmp <singularity image> updateDB -u /databases --dbname uniprotKB -f MD >-i https://github.com/h836472/ContScout/raw/main/DataBaseInfo/DB.info.txt"
   
 
 Singularity example installing nr database, pre-formatted for MMSeqs lookups  
   
-singularity exec -B <local_database_directory>:/databases -B <local_tmp_folder>:/tmp <singularity image> updateDB -u /databases --dbname nr_prot -f M -i https://github.com/h836472/ContScout/raw/main/DataBaseInfo/DB.info.txt"
+>singularity exec -B <local_database_directory>:/databases -B <local_tmp_folder>:/tmp <singularity image> updateDB -u /databases --dbname nr_prot -f M -i >https://github.com/h836472/ContScout/raw/main/DataBaseInfo/DB.info.txt"
   
 __*Please note*__: While performing a protein database installation, updateDB also downloads the latest taxonomy database from NCBI.
   Public databases are ***huge***:, with compressed archives exceeding 50-80 GB. Depending on the network connection, download and the subsequent formatting steps will ***take several hours***.
