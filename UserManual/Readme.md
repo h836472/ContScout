@@ -104,18 +104,7 @@ Your input files shall be copied in a single query directory  (***query/Quersube
 >singularity exec -B /data/CS_test/databases:/databases -B /data/CS_test/query:/query -B /tmp:/tmp /data/CS_test/singularity_images/contscout_latest.sif ContScout -u /databases -i /query/Quersube -q 58331 -c 2 -x all -p 20 -t /tmp -d demo -a mmseqs
 
 Please notice the singularity "bind directory" commands, that are written in ***-B host:guest*** format. Each of them adds an existing host directory to the ContScount container with the guest directory name as specified. It is recommended, that singularity bind parameters are carefully matched with ContScout parameters. For an example see ***-B /tmp:/tmp singularity*** later parameter followed by ContScout parameter ***-t /tmp***.
-  
-Detailed explanation of ContScout parameters in the example above:
-  - **-u** (user directory) path to the folder, where the local reference database is stored
-  - **-i** (input directory) path to the directory with the query data (contains subfolders FASTA_prot and GFF_annot)
-  - **-q** the expected NCBI taxon ID of the query genome. Corresponds to the sequenced species that we screen for contamination.
-  - **-c** number of CPU-s to use (affects mainly the alignment step)
-  - **-x** which group to filter out (accepted values are: all, viruses, bacteria, archaea, fungi, viridiplantae, metazoa, other_euk)
-  - **-p** minimum percentage of sequence identity required. This filter preceedes dynamic trimming. [Default value: 20]
-  - **-t** location of the temporary folder. 
-  - **-d** name of the database to be used
-  - **-a** algorithm to be used for database lookup (mmseqs or diamond)
-  
+ 
   When ready, ContScout creates an output directory within the folder that was specidied by the user via the -i parameter. Output folder follows the following scheme: ***{species\_latin\_name}\_tax\_{taxonID}\_{timestamp}***. Example: ***Quercus\_suber\_tax\_58331\_13Jan_2023_18_34***.
   
 Description of the output files  
@@ -130,7 +119,21 @@ Description of the output files
   Example:  
   \>XP_023876615.1 ProtTag:fungi|ContigTag:fungi|CtgNumProt:67
   
-      
+Detailed explanation of ContScout parameters:
+  - **-h** displays help message
+  - **-u** (user directory) path to the folder, where the local reference database is stored
+  - **-c** number of CPU-s to use (affects mainly the alignment step)
+  - **-d** name of the database to be used
+  - **-i** (input directory) path to the directory with the query data (contains subfolders FASTA_prot and GFF_annot)
+  - **-q** the expected NCBI taxon ID of the query genome. Corresponds to the sequenced species that we screen for contamination.
+  - **-f** when discovering inconsistencies between GFF annotation and fasta proteins file, this flag forces analysis to continue 
+  - **-r** skip the database search and reuse ABC file from previous run if possible
+  - **-n** perform the analysis without using any GFF/GTF annotation file
+  - **-s** MMSeqs sensitivity parameter [default: 2]
+  - **-x** which group to filter out [default: all] further accepted values are: viruses, bacteria, archaea, fungi, viridiplantae, metazoa, other_euk
+  - **-p** minimum percentage of sequence identity required. This filter preceedes dynamic trimming. [default: 20]
+  - **-t** location of the temporary folder. 
+  - **-a** algorithm to be used for database lookup (mmseqs or diamond)
   
   
   
