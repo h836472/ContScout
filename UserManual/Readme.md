@@ -62,7 +62,7 @@ Then, please add the taxonomy information to the fasta headers of your reference
 Please use MMSeqs or DIAMOND to convert your reference database into search databases. (mmseqs createdb ... , DIAMOND makedb ...)
 Copy the reference databases to your local database repository using the folder structure similar to the "demo" database provied as an example.
  
-Then, reguster each of your custom databases by adding a new line in the *db_inventory.txt* file within your local database repository.
+Then, register each of your custom databases by adding a new line in the *db_inventory.txt* file within your local database repository.
 For manually added databases, the minimum required fields are "db.Name", "db.Loc", and "Format". Please check the *db_inventory.txt* file in the example set as a reference.
 
 Later this year, a conversion tool, similar to updateDB, shall be released that automates user database addition.
