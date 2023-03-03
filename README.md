@@ -16,5 +16,5 @@ Please consult Balint et al. 2022 "Purging genomes of contamination eliminates s
 
 **Note**
 * The ContScout version that was used for the analyses described in the manuscript has been frozen and placed under the branch "bioRxiv_version" while the "main" branch is constantly developed.  
-* A detailed user documentation is being created together with a short tutorial. In the meantime, if you need any help with the installation or use of the tool, please do not hesitate to contact the authors.
+* Please consult the manual under the GitHub folder "UserManual" regarding installation and command line options. Also, you might want to experiment with a small-scale demo data set, that is located in the "Example" folder.
 
