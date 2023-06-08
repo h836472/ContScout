@@ -23,8 +23,9 @@ cd R-4.1.2 &&\
     --with-blas \
     --with-lapack=\
     --with-x=no &&\
-make -j $ncpu &&\
-make -j $ncpu install &&\
+alias make="make -j $ncpu"    
+make &&\
+make install &&\
 cd .. &&\
 rm -r R-4.1.2 &&\
 rm R-4.1.2.tar.gz &&\
