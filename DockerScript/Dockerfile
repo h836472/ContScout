@@ -32,8 +32,8 @@ rm R-4.1.2.tar.gz &&\
 ln -s /opt/R/4.1.2/bin/R /usr/bin/R &&\
 ln -s /opt/R/4.1.2/bin/Rscript /usr/bin/Rscript &&\
 mkdir ~/.R &&\
-echo 'MAKEFLAGS = -j4' >~/.R/Makevars
-
+echo 'MAKEFLAGS = -j4' >~/.R/Makevars&&\
+echo 'options(Ncpus = XX)' >>~/.R/Makevars
 RUN \
     R -e "if(!require('optparse',quietly=TRUE)) {install.packages('optparse',dependencies=TRUE,repos='http://cran.rstudio.com/')}" && \
     R -e "if(!require('bitops',quietly=TRUE)) {install.packages('bitops',dependencies=TRUE,repos='http://cran.rstudio.com/')}" && \
