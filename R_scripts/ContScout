@@ -33,7 +33,6 @@ suppressPackageStartupMessages(library("bitops"))
 suppressPackageStartupMessages(library("GenomicRanges"))
 suppressPackageStartupMessages(library("rtracklayer"))
 suppressPackageStartupMessages(library("xlsx"))
-suppressPackageStartupMessages(library("psych"))
 
 cargs=commandArgs(trailingOnly=T)
 option_list = list(
