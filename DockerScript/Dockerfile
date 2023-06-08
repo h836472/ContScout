@@ -42,6 +42,7 @@ RUN \
     R -e 'if(!require('rtracklayer',quietly=TRUE)) {BiocManager::install("rtracklayer")}' &&\	
     R -e 'if(!require('rJava',quietly=TRUE)) {install.packages("rJava",dependencies=TRUE,repos="http://cran.rstudio.com/")}' &&\
     R -e 'if(!require('xlsx',quietly=TRUE)) {install.packages("xlsx",dependencies=TRUE,repos="http://cran.rstudio.com/")}' &&\
+    R -e 'if(!require('googlesheets4',quietly=TRUE)) {install.packages("googlesheets4",dependencies=TRUE,repos="http://cran.rstudio.com/")}' &&\
     R -e 'if(!require('GenomicRanges',quietly=TRUE)) {BiocManager::install("GenomicRanges")}' 
 #install latest DIAMOND
 RUN ncpu=$(lscpu -b -p=Core,Socket | grep -v '^#' | sort -u | wc -l)
