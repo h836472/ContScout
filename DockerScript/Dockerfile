@@ -40,7 +40,7 @@ RUN \
     R -e 'if (!require("BiocManager", quietly = TRUE)) {install.packages("BiocManager",dependencies=TRUE,repos="http://cran.rstudio.com/")}' &&\
     R -e 'if(!require('Biostrings',quietly=TRUE)) {BiocManager::install("Biostrings")}' &&\	
     R -e 'if(!require('rtracklayer',quietly=TRUE)) {BiocManager::install("rtracklayer")}' &&\	
-    R -e 'if(!require('rJava',quietly=TRUE)) {install.packages("rJava)}' &&\
+    R -e 'if(!require('rJava',quietly=TRUE)) {install.packages("rJava")}' &&\
     R -e 'if(!require('xlsx',quietly=TRUE)) {install.packages("xlsx")}' &&\
     R -e 'if(!require('GenomicRanges',quietly=TRUE)) {BiocManager::install("GenomicRanges")}' 
 #install latest DIAMOND
