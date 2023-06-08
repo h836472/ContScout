@@ -15,5 +15,5 @@ Please consult Balint et al. 2022 "Purging genomes of contamination eliminates s
 
 **Notes**
 * The ContScout version that was used for the analyses described in the bioRxiv manuscript has been frozen and placed under the branch "bioRxiv_version". Journal review of the manuscript is on-going that has resulted in many changes in the tool, including a major improvement on the taxon labelling engine. Branch "main" holds the most up-to-date software version with the latest features. Please note that "main" branch is going trough a major update procedure in the following approximately two weeks. (8th July-20th July 2023) Before using this tool in production, please consult the authors to ensure you receive the latest tool and the most accurate user manual.
-* Please note that many command line flag changed completely. Do not forget to check the new syntax with ContScout -h.
+* Please note that many command line flags / options have changed. Do not forget to check the new syntax with ContScout -h.
 
