@@ -53,8 +53,8 @@ RUN tar -xvf /data/diamond_latest_src.tar.gz
 RUN mkdir /data/diamond-`cat /data/version.txt`/build_diamond && \
 cd /data/diamond-`cat /data/version.txt`/build_diamond &&\
 cmake .. &&\
-make -j $ncpu &&\
-make install -j $ncpu 
+make &&\
+make install
 RUN rm diamond_latest_src.tar.gz
 
 #install latest MMSEQS, including all CPU optimizations (avx2 > sse4.1 > sse2)
