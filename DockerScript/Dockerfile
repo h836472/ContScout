@@ -41,6 +41,8 @@ RUN \
     R -e 'if(!require('Biostrings',quietly=TRUE)) {BiocManager::install("Biostrings")}' &&\	
     R -e 'if(!require('rtracklayer',quietly=TRUE)) {BiocManager::install("rtracklayer")}' &&\	
     R -e 'if(!require('GenomicRanges',quietly=TRUE)) {BiocManager::install("GenomicRanges")}' 	
+    R -e 'if(!require('xlsx',quietly=TRUE)) {install.packages("xlsx")}' 
+    R -e 'if(!require('GenomicRanges',quietly=TRUE)) {BiocManager::install("GenomicRanges")}' 
 #install latest DIAMOND
 RUN ncpu=$(lscpu -b -p=Core,Socket | grep -v '^#' | sort -u | wc -l)
 RUN curl -s https://api.github.com/repos/bbuchfink/diamond/releases/latest  | sed -Ene '/^ *"tag_name": *"v(.+)",$/s//\1/p' >/data/version.txt
