@@ -32,32 +32,40 @@ suppressPackageStartupMessages(library("parallel"))
 suppressPackageStartupMessages(library("bitops"))
 suppressPackageStartupMessages(library("GenomicRanges"))
 suppressPackageStartupMessages(library("rtracklayer"))
-suppressPackageStartupMessages(library("huxtable"))
+suppressPackageStartupMessages(library("xlsx"))
+suppressPackageStartupMessages(library("psych"))
+
 cargs=commandArgs(trailingOnly=T)
 option_list = list(
   make_option(c("-a", "--aligner"), type="character", default="mmseqs", 
               help="Aligner software to use", metavar="userdir"),
   make_option(c("-u", "--userdir"), type="character", default=NULL, 
               help="Path to local database repository folder", metavar="userdir"),
+  make_option(c("-U", "--unknown"), type="character", default="keep", 
+              help='How to handle proteins without reference hit ("keep" / "drop")', metavar="unknown"),
+  make_option(c("-w", "--what"), type="character", default=NULL, 
+              help="Main project name", metavar="what"),
   make_option(c("-c", "--cpu"), type="character", default="all", 
               help="Number of CPUs to use", metavar="cpu"),
-  make_option(c("-d", "--dbname"), type="character", default=NULL,help="Name of the database to be used as a reference",metavar="dbname"),
+  make_option(c("-C", "--consensus"), type="character", default="0.5", 
+              help="Consensus taxon call threshold", metavar="consensus"),
+  make_option(c("-d", "--dbname"), type="character", default=NULL,help="Name of the reference database",metavar="dbname"),
   make_option(c("-i", "--inputdir"), type="character", default=NULL, 
-              help="Input data directory containing fasta protein sequence and -optionally- GFF annotation file", metavar="inputdir"),
+              help="Input data directory containing fasta protein sequence and annotation files", metavar="inputdir"),
   make_option(c("-q", "--querytax"), type="character", default=NULL, 
               help="NCBI TaxonID for query", metavar="querytax"),
   make_option(c("-f", "--force"), action="store_true", default=FALSE, 
               help="Force the analysis despite inconsistencies between annotation file and fasta file."),
-  make_option(c("-r", "--reuse_abc"), action="store_true", default=FALSE, 
+  make_option(c("-r", "--reuse_abc"), action="store_true", default=FALSE,metavar="reuse_abc", 
               help="Reuse ABC file from previous run if possible."),
-  make_option(c("-n", "--no_annot"), action="store_true",default=FALSE,  
-              help="No annotation file is provided. Perform individual protein-based filtering."),
-  make_option(c("-s", "--sens"), type="character", default="2", 
-              help="Sensitivity value for MMSeqs search", metavar="sens"),
+  make_option(c("-n", "--no_annot"), action="store_true", default=FALSE,  
+              help="Perform analysis on a genome with no annotation."),
+  make_option(c("-s", "--sensM"), type="character", default="2", 
+              help="Sensitivity value for MMSeqs", metavar="sensM"),
+  make_option(c("-S", "--sensD"), type="character", default="fast", 
+              help="Sensitivity value for Diamond", metavar="sensD"),
   make_option(c("-m", "--memlimit"), type="character", default=NULL, 
-              help="Memory usage limit", metavar="memlimit"),
-  make_option(c("-x", "--exclude_tax"), type="character", default="all",
-              help="Set the taxonomical groups to remove.",metavar="exclude_tax"),
+              help="Memory usage limit for MMSeqs", metavar="memlimit"),
   make_option(c("-l", "--list_databases"), action="store_true", default=FALSE,
               help="List pre-formatted databases stored in the local database repository."),
   make_option(c("-p", "--pci"), type="character", default="20",
@@ -65,33 +73,119 @@ option_list = list(
   make_option(c("-t", "--tmpdir"), type="character", default=NULL,
              help="Path to temp folder.",metavar="TEMP"));
 opt_parser = OptionParser(option_list=option_list,prog=progname);
+
 if(FALSE)
 {
-#manually set options, if needed for development
+#this section is placed to allow manually configured options, if needed for interactive run during development
 opt=list()
-opt[["aligner"]]="mmseqs" # -a 
-opt[["userdir"]]="/databases" #-u 
-opt[["cpu"]]=2 #-c 
-opt[["dbname"]]="demo" #-d 
-opt[["inputdir"]]="/query/Quersube" # -i
-opt[["querytax"]]=58331 #-q 
+opt[["aligner"]]="diamond" # -a 
+opt[["userdir"]]="/node7_data/balintb/databases_dev" #-u 
+opt[["cpu"]]=24 #-c 
+opt[["dbname"]]="nr" #-d 
+opt[["inputdir"]]="/node7_data/balintb/ContScout_Devilopment/CS_2023_june/Aspzo1_tax_1073090" # -i
+opt[["outdir"]]="./"
+opt[["querytax"]]=1073090 #-q 
 opt[["force"]]=FALSE
-opt[["reuse_abc"]]=FALSE #-r
+opt[["reuse_abc"]]=TRUE #-r
 opt[["no_annot"]]=FALSE
-opt[["sens"]]=2 #-s 2
-opt[["memlimit"]]="150G" #-m 
-opt[["exclude_tax"]]="all" #-x 
-opt[["list_databases"]]=FALSE
-opt[["pci"]]=20 #-p 
-opt[["tmpdir"]]="/cs_temp" #-t 
+opt[["sensM"]]=2 #-s 2
+opt[["sensD"]]="fast" #-S fast
+opt[["memlimit"]]="150G" #-m 150G
+opt[["list_databases"]]=FALSE #
+opt[["pci"]]=20 #-p 20
+opt[["tmpdir"]]="/work/tmp" #-t 
+opt[["consensus"]]=0.5
 }else{
 opt = parse_args(opt_parser);
 }
-
 startdir=getwd()
 time_start=Sys.time()
-logfilename=paste0("ContScout_",format(time_start,"%d%b_%Y_%H_%M"),".log")
-logfile=file(logfilename,open="a") #copy log file to output folder once we are done!
+logfilename=paste0(startdir,"/ContScout_",format(time_start,"%d%b_%Y_%H_%M"),".log")
+opt[["logfilename"]]=logfilename
+logfile=file(logfilename,open="a") 
+
+offsets=1:6
+names(offsets)=c("family","order","class","phylum","kingdom","superkingdom")
+
+#Tool detects the number of physical cores, IGNORING hyperthreading
+
+cpu_info=system("lscpu",intern=T)
+numT=grep('Thread(s) per core:',cpu_info,fixed=T,value=T)
+numT=as.numeric(gsub("^.+\\s","",numT))
+numC=grep("^CPU\\(s\\):",cpu_info,value=T)
+numC=as.numeric(gsub("^CPU\\(s\\):\\s+","",numC))
+numC_max=numC/numT
+
+if(opt[["cpu"]]=="all")
+{
+opt[["cpu"]]=numC_max
+} else if(as.numeric(opt[["cpu"]])>as.numeric(numC_max))
+{
+info(paste0("System only has ",numC_max, " CPUs installed. Decreasing -c value accordingly.\n"),log=T)
+opt[["cpu"]]=numC_max
+}
+
+if(!tolower(opt[["unknown"]])%in%c("keep","drop"))
+{
+byedie(paste0("Please set, how unknown proteins shall be treated. Accepted -U options: ",'"',"keep",'"'," or ",'"',"drop",'"',".\n"))
+}
+
+
+#user dir check. Reference databases are kept in this directory, created by updateDB
+if(is.null(opt[["userdir"]]))
+{
+byedie(paste0("Please provide the path to your user directory (-u) containing the pre-formatted reference databases.\nIf you do not have any local database yet, you can use the tool \'updateDB\'.","\n"))
+}
+
+#detect reference databases
+databases=list.files(opt[["userdir"]],pattern="\\.dbinfo",recursive=T,full.names=T)
+names(databases)=gsub("\\.dbinfo$","",gsub("^.+/","",databases))
+names(databases)=gsub("_",":",names(databases))
+if(length(databases)==0)
+{
+byedie(paste0("No reference database was found under ",'"',opt[["userdir"]],'"',".","Please check if the local directory is properly set.\nRemember, you can download and pre-format reference databases with ","'","UpdateDB",'"',".\n"))
+}
+dbdata=lapply(databases,function(x) readLines(x))
+
+#if -l switch is present, tool lists all configured reference databases and quits
+
+if (opt[["list_databases"]])
+{
+cat("Listing pre-formatted reference databases.\n")
+res=lapply(names(dbdata),function(x) writeLines(c(paste0("### ",x," ###"),dbdata[[x]],"\n")))
+cat(paste0("Please select a database. Examples: ",'"',"-d refseq",'"',", ",'"',"-d refseq:latest",'"',",",'"',"-d refseq:04f69a06",'"',"\n"))
+q(save="no",status=0)
+}
+
+#ensure, user sets the database name (example -d uniprotKB)
+if(is.null(opt[["dbname"]]))
+{
+byedie("Please provide the name of the reference database (-d) you wish to search against.\nYou can use -l switch to list locally installed reference databases.\n")
+}
+dbname=unlist(strsplit(opt[["dbname"]],":"))
+if(length(dbname)==1 || grepl("^latest$",dbname[[2]],ignore.case=T))
+{
+db.sel=databases[grep(dbname[[1]],names(databases))]
+db.sel.timestamp=sapply(db.sel,function(x) gsub("^Creation_Date: ","",grep("Creation_Date",readLines(x),value=T)))
+db.sel.timestamp=as.POSIXct(db.sel.timestamp,format="%Y-%m-%d_%H:%M:%S")
+db.latest=names(db.sel[which(db.sel.timestamp==max(db.sel.timestamp))])
+db.sel.data=dbdata[[db.latest]]
+}else
+{
+db.sel.data=dbdata[[opt[["dbname"]]]]
+if(is.null(db.sel.data))
+{
+byedie(paste0("Could not find database",'"',opt[["dbname"]],'"'," at location ",'"',opt[["userdir"]],'"',".\n"))
+}
+}
+
+db.sel.data=lapply(db.sel.data,function(x) unlist(strsplit(x,": ")))
+db.sel.data=do.call(rbind,db.sel.data)
+colnames(db.sel.data)=c("Tag","Value")
+rownames(db.sel.data)=db.sel.data[,1]
+
+#ensure, user defines an input dir. Query genome shall be copied there by the user. 
+#input dir shall contain a "protein_seq" and an "annotation_data" subfolders containing predicted protein sequence and genome annotation data, respectively
 
 if (is.null(opt[["inputdir"]]))
 {
@@ -99,11 +193,6 @@ byedie("Please specify an input directory that contains the protein sequence and
 }
 setwd(opt[["inputdir"]])
 
-#user dir check
-if(is.null(opt[["userdir"]]))
-{
-byedie("Please provide the path to your user directory with the pre-formatted reference databases.\n If you do not have any local database yet, you can use the tool \'updateDB\'.")
-}
 
 #tmpdir check and set
 if(is.null(opt[["tmpdir"]]))
@@ -113,7 +202,12 @@ opt[["tmpdir"]]=paste0(opt[["userdir"]],"/tmp")
 if(!file.exists(opt[["tmpdir"]]))
 {dir.create(opt[["tmpdir"]])}
 
-#memlimit check
+if(opt[["aligner"]]=="diamond" && !tolower(opt[["sensD"]])%in%c("mid-sensitive","sensitive","more-sensitive","very-sensitive","ultra-sensitive","fast"))
+{
+byedie("Please set a valid Diamond sensitivity value (default: fast).")
+}
+
+#memlimit format check
 if (!is.null(opt[["memlimit"]])&&!grepl("^\\d+G$",opt[["memlimit"]]))
 {
 byedie(paste0('Please provide a memory limit in {num}G format. Example: 150G!\n'))
@@ -126,80 +220,44 @@ if(!opt[["aligner"]]%in%c("mmseqs","diamond"))
 byedie("Please select MMSeqs (-a mmseqs) or Diamond (-a diamond) as your preferred aligner!\n")
 }
 
-if(is.null(opt[["dbname"]])&&!opt[["reuse_abc"]])
-{
-byedie("Please provide the name of the reference database you wish to search against.\nYou can use -l switch to list pre-formatted database versions.\n")
-}
-
-#check if required reference databases exist
-#1., NCBI taxonomy
-#2., opt[["db.Name"]], in format matching opt[["aligner"]]
-
-
-if(!(file.exists(paste0(opt[["userdir"]],"/db_inventory.txt"))&&file.info(paste0(opt[["userdir"]],"/db_inventory.txt"))$size>0))
-{
-byedie(paste0("Could not find a database inventory file at ",'\"',opt[["userdir"]],'\".',"\n"," Please check that you have locally installed reference database and the path is accurate!\n If needed, you can build a local reference database with tool \'updateDB\'."))
-}else{
-db.info=read.table(paste0(opt[["userdir"]],"/db_inventory.txt"),as.is=T,head=T)
-db.info=db.info[,c("db.Name","db.CRC","db.Loc","date","Format","is.Latest")]
-db.info[,"db.Loc"]=paste0(opt[["userdir"]],"/",db.info[,"db.Loc"])
-taxdb.loc.sel=db.info[db.info[,"db.Name"]=="ncbi_taxonomy"&db.info[,"is.Latest"]=="yes","db.Loc"]
-db.info=db.info[db.info[,"Format"]%in%c("ncbidump",opt[["aligner"]]),]
-if(grepl(":",opt[["dbname"]]))
-{
-db.sel=unlist(strsplit(opt[["dbname"]],":"))
-db.loc.sel=db.info[db.info[,"db.Name"]==db.sel[[1]]&db.info[,"db.CRC"]==db.sel[[2]],"db.Loc"]
-}else
-{
-db.loc.sel=db.info[db.info[,"db.Name"]==opt[["dbname"]]&db.info[,"is.Latest"]=="yes","db.Loc"]
-}
-
-if(length(db.loc.sel)==0 || length(db.loc.sel) !=1)
-{
-byedie(paste0("Error with local user database repository at \'",opt[["userdir"]],"\'","\nReference database \'",opt[["dbname"]],"\' not found in format \'",opt[["aligner"]],"\'.\nPlease check your local database directory.\nYou can automagically add new reference databases with the \'updateDB\' tool.\n"))
-}
-
-}
-if (opt[["list_databases"]])
-{
-cat("Listing pre-formatted reference databases.\n")
-db.info.s=split(db.info,db.info[,"db.Name"])
-res=lapply(names(db.info.s),function(x) {cat(x,"\n");db.print=db.info.s[[x]];db.print=db.print[,colnames(db.print)!="db.Loc"];print_screen(hux(db.print),colnames=FALSE)})
-q(save="no",status=0)
-}
-
-DropTax=tolower(unlist(strsplit(opt[["exclude_tax"]],"\\|")))
-if(!all(DropTax%in%c("all","viruses","bacteria","archaea","fungi","viridiplantae","metazoa","other_euk","none")))
-{
-byedie(paste0("Please provide taxons to be filtered!\nAccepted categories: [all|viruses|bacteria|archaea|fungi|viridiplantae|metazoa|other_euk|none]\nYou can provide multiple keywords at once, separated by \"|\". Example: -x archaea|bacteria\n"))
-}
-
+#ensure, user sets an NCBI taxon ID for the query genome. That sets the taxon information for the host, that shall be cleaned.
 if(is.null(opt[["querytax"]])){
-byedie(paste0('Please provide an NCBI Taxon ID for the query genome via option -q!'))
+byedie(paste0('Please provide an NCBI Taxon ID for the query genome via option -q!',"\n"))
 }else if(!grepl("^\\d+$",opt[["querytax"]]))
 {
 byedie(paste0('Please ensure the NCBI Taxon ID only contains numeric characters!'))
 }
 
-protfile=list.files(paste0("FASTA_prot"),full.name=T)
+#checking for the presence of required input files (protein sequence, plus genome annotation data)
+protfile=list.files(paste0("protein_seq"),full.name=T)
 protfile=grep("(\\.fa\\.*g*z*$|\\.faa.*g*z*$|\\.fasta.*g*z*$)",protfile,value=T,ignore.case=T)
 if(!length(protfile)==1)
 {
-byedie(paste0('Please create a folder named "FASTA_prot" within ',opt[["inputdir"]]," and copy your protein fasta file there.\nPlease note that only one protein file is allowed per run."))
+byedie(paste0('Please create a folder named "protein_seq" within ',opt[["inputdir"]]," and copy your protein fasta file there.\nPlease note that only one protein file is allowed per run."))
 }
 if(!opt[["no_annot"]])
 {
-annotfile=list.files(paste0("GFF_annot"),full.name=T)
+annotfile=list.files(paste0("annotation_data"),full.name=T)
 annotfile=grep("\\.g[tf]f3*\\.*g*z*$",annotfile,value=T,ignore.case=T)
 if(!length(annotfile)==1)
 {
-byedie(paste0('Please create a folder named "GTF_annot" within ',opt[["inputdir"]]," and copy your annotation file there.\nPlease note that only one protein file is allowed per run."))
+byedie(paste0('Please create a folder named "annotation_data" within ',opt[["inputdir"]]," and copy your GTF/GFF annotation file there.\nPlease note that only one annotation file is allowed per run."))
 }
 }else{
-info("Option -n active, run is carried out witout an annotation file.\nEach protein will be assigned into virtual singleton contig.\n")
+info("Option -n active, run is carried out witout an annotation file.\nEach protein will be assigned into a virtual singleton contig.\n")
 }
+#check if the threshold for consensus contig taxon call is set properly. It shall be ]0.5-0.9999)
+opt[["consensus"]]=as.numeric(opt[["consensus"]])
+if(is.na(opt[["consensus"]]) || opt[["consensus"]]<0.5 || opt[["consensus"]] >(1-1e-4))
+{
+byedie(paste0("Please set a valid consensus vote therhold for contig taxon call via parameter -C.\nThis value shall be between 0.5 and 0.9999. Default value is 0.5"))
+}
+#Tool automatically picks up the NCBI database version that was used by updateDB, when formatting the reference database.
+taxdb.loc.sel=paste0(opt[["userdir"]],"/",gsub("/diamond/.+$","",db.sel.data["Diamond_DB","Value"]),"/ncbi_tax/",db.sel.data["Tax_CRC","Value"])
 
-q.tax.cmd=paste0("grep ",opt[["querytax"]]," ",taxdb.loc.sel)
+info("Pre-processing NCBI taxon database.")
+
+q.tax.cmd=paste0("grep ",opt[["querytax"]]," ",taxdb.loc.sel,"/",db.sel.data["Tax_CRC","Value"],"_rankedlineage.dmp")
 q.tax.hit=system(q.tax.cmd,intern=T)
 q.tax.hit=grep(paste0("^",opt[["querytax"]],"\\t"),q.tax.hit,value=T)
 
@@ -225,42 +283,53 @@ byedie(paste0('Could not link TaxonID "',opt[["querytax"]],'" to a single taxon 
 byedie("The provided TaxonID was not found within Archaea, Bacteria or Eukarota.")
 }
 }
-
 now.stamp = paste0(tax.first,"_tax_",opt[["querytax"]],"_",format(time_start,"%d%b_%Y_%H_%M"))
-#now.stamp=""Salpingoeca_rosetta(tax_946362)_15Jun_2022_15_26"
+
+if(is.null(opt[["what"]]))
+{
+opt[["what"]]=tax.first
+}
+
+
+tidrl.file=paste0(taxdb.loc.sel,"/",db.sel.data["Tax_CRC","Value"],"_rankedtaxidlineage.RDS")
+tax=readRDS(tidrl.file)
+rankedlineage=readLines(paste0(taxdb.loc.sel,"/",db.sel.data["Tax_CRC","Value"],"_rankedlineage.dmp"))
+rankedlineage=unlist(mclapply(rankedlineage,function(x) gsub("\t|\t","_|_",x,fixed=T),mc.cores=opt[["cpu"]]))
+rankedlineage=unlist(mclapply(rankedlineage,function(x) gsub("\t|","",x,fixed=T),mc.cores=opt[["cpu"]]))
+rankedlineage=mclapply(rankedlineage,function(x) return(unlist(strsplit(x,"_\\|_"))),mc.cores=opt[["cpu"]])
+names(rankedlineage)=unlist(mclapply(rankedlineage,function(x) return(paste0("t",x[[1]])),mc.cores=opt[["cpu"]]))
+
+taxDict=sapply(rankedlineage,function(x) x[[2]])
+
+query_taxline=paste0("t",tax[paste0("t",opt[["querytax"]]),c("family","order","class","phylum","kingdom","superkingdom")])
+names(query_taxline)=c("family","order","class","phylum","kingdom","superkingdom")
+
+taxline_outtext=c("Query taxon lineage:",paste(names(query_taxline),gsub("^t","",query_taxline),taxDict[query_taxline],sep=":"),"\n")
+info(taxline_outtext)
+
+taxtable.file=list.files(pattern="taxID_DBcount.RDS",full.name=T,gsub("/ncbi_tax/.+$","",taxdb.loc.sel))
+taxtable=readRDS(taxtable.file)
 
 outdir=paste0(now.stamp)
-if(!file.exists(outdir))
-{dir.create(outdir)}
-
 opt[["outdir"]]=outdir
 
-saveRDS(opt,paste0(outdir,"/Arguments.RDS"))
-close(logfile) #we close log file and move it to outdir folder
-rf=file.rename(logfilename,paste0(outdir,"/",logfilename))
-logfile=file(paste0(outdir,"/",logfilename),open="a") 
+#Creating output directory structure
+if(!file.exists(outdir))
+{dir.create(outdir)
+dir.create(paste0(outdir,"/R_saved_objects"))
+dir.create(paste0(outdir,"/diag_data"))
+dir.create(paste0(outdir,"/filtered_outputs"))
+}
 
+saveRDS(opt,paste0(outdir,"/R_saved_objects/Arguments.RDS"))
+close(logfile) #we close the initial log file and move it to the final outdir folder
+rf=file.rename(logfilename,paste0(outdir,"/",opt[["what"]],"_ContScout_",format(time_start,"%d%b_%Y_%H_%M"),".log"))
+opt[["logfile"]]=paste0(outdir,"/",opt[["what"]],"_ContScout_",format(time_start,"%d%b_%Y_%H_%M"),".log")
+logfile=file(opt[["logfile"]],open="a") 
 info(paste0("Analysis started at ",time_start),log=T)
 info(paste0("Command: ",paste(cargs,collapse=" ")),log=T)
-info("Databases found:",log=T)
-info(readLines(paste0(opt[["userdir"]],"/db_inventory.txt")),log=T)
-
-q.tax.tag=tolower(q.tax.tag)
-cpu_info=system("lscpu",intern=T)
-numT=grep('Thread(s) per core:',cpu_info,fixed=T,value=T)
-numT=as.numeric(gsub("^.+\\s","",numT))
-numC=grep("^CPU\\(s\\):",cpu_info,value=T)
-numC=as.numeric(gsub("^CPU\\(s\\):\\s+","",numC))
-numC_max=numC/numT
-#number of physical cores. IGNORE hyperthreading
-if(opt[["cpu"]]=="all")
-{
-opt[["cpu"]]=numC_max
-} else if(as.numeric(opt[["cpu"]])>as.numeric(numC_max))
-{
-info(paste0("System only has ",numC_max, " CPUs installed. Decreasing -c value accordingly.\n"),log=T)
-opt[["cpu"]]=numC_max
-}
+info("Databases used:",log=T)
+info(apply(db.sel.data,1,function(x) paste(x,collapse=": ")))
 
 cat("Now reading fasta headers file.\n")
 if(grepl("\\.gz$",protfile)){
@@ -269,9 +338,8 @@ input.headers=gsub(">","",system(paste0('zgrep ">" ',protfile),intern=T))
 input.headers=gsub(">","",system(paste0('grep ">" ',protfile),intern=T))
 }
 input.headers=gsub(" .+","",input.headers) #remove any extra info from fasta headers beyond space character
-
-dir.create(paste0(outdir,"/FASTA_prot"))
-copyres=file.copy("FASTA_prot",paste0(outdir),recursive=T)
+dir.create(paste0(outdir,"/protein_seq"))
+copyres=file.copy("protein_seq",paste0(outdir),recursive=T)
 
 if(!opt[["no_annot"]]){
 cat("Now reading annotation file.\n")
@@ -289,35 +357,41 @@ byedie("Error! Protein IDs in the protein sequence file completely differ from t
 GFF.sel.s=split(GFF.sel,GFF.sel[,prot_ID_column]) 
 MultiCtgProts=unlist(mclapply(GFF.sel.s,function(x) return(length(unique(x[,"seqid"]))>1),mc.cores=opt[["cpu"]]))
 MultiCtgProts=names(MultiCtgProts)[MultiCtgProts]
-gene.contig=unlist(mclapply(GFF.sel.s,function(x) return(unique(as.character(x[,"seqid"]))),mc.cores=opt[["cpu"]]))
+gene.contig=mclapply(GFF.sel.s,function(x) return(unique(as.character(x[,"seqid"]))),mc.cores=opt[["cpu"]])
+if(!opt[["force"]])
+{
+if(length(MultiCtgProts)>0) 
+{
+byedie(paste0("Inconsistent annotation found:\n",length(MultiCtgProts)," out of ",length(input.headers)," proteins belong to multiple contig.\nRefusing to work with inconsistent annotation data...\nPlease repair your annotation file or use the -f switch to force the analysis.\nIf you continue with the invalid annotation file, proteins mapping to multiple contigs will be randomly assigned. Proteins that are not in the annotation file will be dropped.\n"))
+}
+}else
+{
+info("Flag -f / --force  is set so tool will work with an inconsistent annotation.\nPlease note that proteins mapping to multiple contigs will be randomly assigned to a single contig.\nProteins not present in the annotation will be dropped.")
+gene.contig=lapply(gene.contig,function(x) return(sample(x,1)))
+#if the same protein is mapped to multiple contig, randomly pick one location. 
+}
+gene.contig=unlist(gene.contig)
+
 GhostProts=setdiff(input.headers,names(gene.contig))
 writeLines(GhostProts,"GhostProteins.txt")
 if(!opt[["force"]])
 {
-if(length(GhostProts)>0) #what about multi-mapper proteins?
+if(length(GhostProts)>0) 
 {
-byedie(paste0("Inconsistent annotation found:\n",length(setdiff(input.headers,names(gene.contig)))," out of ",length(input.headers)," proteins are missing from the annotation file.\nRefusing to work with inconsistent annotation data...\nPlease repair the GTF annotation file or use the -f switch to force the analysis.\nIf you continue with the invaluid GFF, all unmapped proteins will be flagged\nand removed regardless to their taxon flags.\n"))
+byedie(paste0("Inconsistent annotation found:\n",length(setdiff(input.headers,names(gene.contig)))," out of ",length(input.headers)," proteins are missing from the annotation file.\nRefusing to work with inconsistent annotation data...\nPlease repair your annotation file or use the -f switch to force the analysis.\nIf you continue with the invalid annotation, all unmapped proteins will be marked\nand removed regardless to their taxon flags.\n"))
 }
 }else
 {
-info("Switch -f / --force active. We will ignore inconsistent annotation.\nPlease note that any protein that has no record in the annotation will be removed.\n")
+info("Flag -f / --force  is set so tool will work with an inconsistent annotation.\nPlease note that any protein that has no record in the annotation will be marked as ghost and will be removed.\n")
+#Proteins that are absent from annotation, are removed.
 }
-if(!opt[["force"]])
-{
-if(any(MultiCtgProts)) 
-{
-byedie(paste0("Inconsistent annotation found:\n",sum(MultiCtgProts)," out of ",length(input.headers)," proteins belong to multiple contig.\nRefusing to work with inconsistent annotation data...\nPlease repair the GTF annotation file or use the -f switch to force the analysis.\nIf you continue with the invaluid GFF,proteins mapping to multiple contigs will not be tested.\n"))
-}
-}else
-{
-info("Switch -f / --force active. We will ignore inconsistent annotation.\nPlease note that any protein that is linked to multiple contigs will not be checked.\n")
-}
+
 ctgDB=cbind(names(gene.contig),gene.contig)
 ctgDB=data.frame(ctgDB,stringsAsFactors=F)
 colnames(ctgDB)=c("ProteinID","Contig")
 rownames(ctgDB)=NULL
-dir.create(paste0(outdir,"/GFF_annot"))
-copyres=file.copy("GFF_annot",outdir,recursive=T)
+dir.create(paste0(outdir,"/annotation_data"))
+copyres=file.copy("annotation_data",outdir,recursive=T)
 }else
 {
 info("Found -n / --no_annot switch. Creating a virtual contig database linking each protein as a singleton.\nThat way, proteins are evaluated one by one.\nProteins from HGT events are likely to be tagged as contamination when using this switch.\n")
@@ -329,37 +403,53 @@ ctgDB=data.frame(ctgDB,stringsAsFactors=F)
 ctgDB=split(ctgDB,ctgDB[,"Contig"])
 GhostProts=""
 }
-saveRDS(ctgDB,paste0(outdir,"/ContigDB.RDS"))
+saveRDS(ctgDB,paste0(outdir,"/R_saved_objects/",opt[["what"]],".ContigDB.RDS"))
+
+#Checking if the alignment step, that is computationally very costly, needs to be done
+
 run_alignment=TRUE
 
 if(opt[["reuse_abc"]])
 {
-#check if ABC file is present and we want to use it
-if(file.exists("ABC.s.RDS")&&file.exists("ABC.s.md5sum")&&file.info("ABC.s.md5sum")[,"size"]>0){
-ABC.saved.md5=readLines("ABC.s.md5sum")
-ABC.saved.md5=substr(ABC.saved.md5,1,32)
-ABC.check.md5=system("md5sum ABC.s.RDS",intern=T)
-ABC.check.md5=substr(ABC.check.md5,1,32)
-if(ABC.check.md5==ABC.saved.md5)
+#user asks for ABC re-use. Tool confirms if all needed files are available and intact. If so, alignment step can be skipped.
+if(!is.null(opt[["aligner"]]))
 {
-info("Alignment R Data file from previous run was found intact. Re-using it as requested.\n")
-run_alignment=FALSE
-cat("Now reading Alignment result (ABC) file.\n")
-ABC.s=readRDS("ABC.s.RDS")
-}else{
-info("MD5 signature mismatch. Alignment R Data file from previous run seems to be corrupt. Repeating the entire alignment step.\n")
-}
-}else{
-info("MD5 signaure for ABC file is missing. Repeating the entire alignment step.\n")
-}
+info(paste0("Info: re-use flag (-r) is set, so ABC file from previous run will be used.\nAlignment software (-a), reference database (-d) and \nsearch sensitivity settings (-s, -S)\nwill be ignored.\n"))
 }
 
-#MMSeqs prep and run#create MMSeqs database
+if(file.exists("R_saved_objects/ABC.s.RDS")&&file.exists("R_saved_objects/ABC.s.md5sum")&&file.info("R_saved_objects/ABC.s.md5sum")[,"size"]>0){
+ABC.saved.md5=readLines("R_saved_objects/ABC.s.md5sum")
+ABC.saved.md5=substr(ABC.saved.md5,1,32)
+ABC.check.md5=system("md5sum R_saved_objects/ABC.s.RDS",intern=T)
+ABC.check.md5=substr(ABC.check.md5,1,32)
+ if(!file.exists("RefTaxLookup.ABC"))
+ {
+ info("ABC data is missing. Repeating the alignment step.\n")
+ }else
+ {
+  if(ABC.check.md5==ABC.saved.md5)
+  {
+  info("Alignment R Data file from previous run was found intact. Re-using it as requested.\n")
+  run_alignment=FALSE
+  cat("Now reading Alignment result (ABC) file.\n")
+  ABC=read.table("RefTaxLookup.ABC",sep="\t",as.is=T) 
+  }else{
+  info("MD5 signature mismatch. Alignment R Data file from previous run seems to be corrupt. Repeating the entire alignment step.")
+  }
+ }
+ }else {
+ info("ABC data is missing. Repeating the alignment step.")
+ }
+}
+
+#Alignment is needed. Either, this is a new run, or alignment data from previous run is corrupted and can not be re-used.
 if(run_alignment)
 {
 if(opt[["aligner"]]=="mmseqs")
 {
-#CPU type
+##MMSeqs aligner selected##
+
+#detect the CPU vector instruction set. This is for runtime optimization. Performance: avx2 >> sse4_1 >>sse2
 cpu=grep("Flags:",system("lscpu",intern=T),value=T)
 if(grepl(" avx2 ",cpu)){
 mmseqs.bin="mmseqs_avx2"
@@ -370,12 +460,13 @@ mmseqs.bin="mmseqs_sse2"
 }
 qdb=gsub("(\\.fa|\\.faa|\\.fasta).*g*z*$",".db",protfile)
 qdb=gsub(".+/","",qdb)
+
+#create query database for MMSeqs
 MM.qdb.cmd=paste0(mmseqs.bin," createdb ",protfile," ",outdir,"/",qdb)
 cat("Converting query sequences to MMSeqs database format\n")
 system(MM.qdb.cmd)
-
-##perform MMSeqs search
-MM.search.cmd=paste0(mmseqs.bin," search -s ",opt[["sens"]]," -a --threads ",opt[["cpu"]]," ",outdir,"/",qdb," ",db.loc.sel," ",outdir,"/TaxMMSeqs.resDB"," ",opt[["tmpdir"]])
+mm.refDB.loc=paste0(opt[["userdir"]],"/",db.sel.data["MMSeqs_DB","Value"])
+MM.search.cmd=paste0(mmseqs.bin," search -s ",opt[["sensM"]]," -a --threads ",opt[["cpu"]]," ",outdir,"/",qdb," ",mm.refDB.loc," ",outdir,"/TaxMMSeqs.resDB"," ",opt[["tmpdir"]])
 if(!is.null(opt[["memlimit"]]))
 {
 MM.search.cmd=paste0(MM.search.cmd," --split-memory-limit ",opt[["memlimit"]])
@@ -383,13 +474,16 @@ MM.search.cmd=paste0(MM.search.cmd," --split-memory-limit ",opt[["memlimit"]])
 MM.search.cmd=paste0(MM.search.cmd," >",outdir,"/mmseqs.log 2>",outdir,"/mmseqs.error" )
 
 info(paste0("Search command:\n",MM.search.cmd,"\n"))
-
+#perform MMSeqs search
 system(MM.search.cmd)
-Trafo.cmd=paste0(mmseqs.bin," convertalis ",outdir,"/",qdb," ",db.loc.sel," ",outdir,"/TaxMMSeqs.resDB"," ",outdir,"/TaxMMSeqs.ABC --format-output query,target,bits,qlen,nident --threads ",opt[["cpu"]])
+#perform ABC file export
+Trafo.cmd=paste0(mmseqs.bin," convertalis ",outdir,"/",qdb," ",mm.refDB.loc," ",outdir,"/TaxMMSeqs.resDB"," ",outdir,"/RefTaxLookup.ABC --format-output query,target,bits,qlen,nident --threads ",opt[["cpu"]])
 system(Trafo.cmd)
 }else if (opt[["aligner"]]=="diamond"){
-#perform DIAMOND search
-DM.search.cmd=paste0("diamond blastp -d ",db.loc.sel," -q ",protfile," -o ",outdir,"/TaxMMSeqs.ABC -f 6 qseqid sseqid bitscore qlen nident --threads ", opt[["cpu"]])
+
+##Diamond aligner selected##
+diam.refDB.loc=paste0(opt[["userdir"]],"/",db.sel.data["Diamond_DB","Value"])
+DM.search.cmd=paste0("diamond blastp -d ",diam.refDB.loc," -q ",protfile," -o ",outdir,"/RefTaxLookup.ABC -f 6 qseqid sseqid bitscore qlen nident --threads ", opt[["cpu"]]," ",opt[["sens_D"]])
 if(!is.null(opt[["memlimit"]]))
 {
 DM.search.cmd=paste0(DM.search.cmd," --memory-limit ",gsub("G$","",opt[["memlimit"]]))
@@ -397,217 +491,425 @@ DM.search.cmd=paste0(DM.search.cmd," --memory-limit ",gsub("G$","",opt[["memlimi
 info(paste0("Search command:\n",DM.search.cmd,"\n"))
 system(DM.search.cmd)
 }
-
-
 cat("Now reading Alignment result (ABC) file.\n")
-ABC=read.table(paste0(outdir,"/TaxMMSeqs.ABC"),sep="\t",as.is=T) 
+ABC=read.table(paste0(outdir,"/RefTaxLookup.ABC"),sep="\t",as.is=T) 
+}
 colnames(ABC)=c("Q","H","BS","Qlen","Nident")
 ABC[,"H"]=gsub("\\|(TaxID|RepID):",":",ABC[,"H"])
 ABC[,"QPCI"]=ABC[,"Nident"]/ABC[,"Qlen"]*100
-ABC=ABC[ABC[,"QPCI"]>=opt[["pci"]],]
+ABC=ABC[ABC[,"QPCI"]>=as.numeric(opt[["pci"]]),]
 ABC=ABC[!grepl(":NA$",ABC[,"H"]),] #drop uninformative hits with NA as taxon ID.
+ABC[,"H.TaxID"]=unlist(mclapply(ABC[,"H"],function(x) unlist(strsplit(x,":"))[2],mc.cores=opt[["cpu"]]))
+ABC[,"Q.TaxID"]=paste0("t",opt[["querytax"]])
+ABC=ABC[ABC[,"Q.TaxID"]!=ABC[,"H.TaxID"],] #Remove hits from reference database that could originate from the query of interest (i.e. self hits)
+ABC.withtax=ABC[,"H.TaxID"]%in%rownames(tax)
+
+info("Printing statistics on ABC files with (TRUE) or without (FALSE) taxon info.")
+summary(ABC.withtax) #we drop hits without 
+info("Dropping ABC lines with no taxon info.")
+ABC=ABC[ABC.withtax,]
+tax.sel=tax[ABC[,"H.TaxID"],c("family","order","class","phylum","kingdom","superkingdom")]  # we remove genus info realizing that this resolution is impossible to use in most cases, including Human sequences
+colnames(tax.sel)=paste0("Tax:",colnames(tax.sel))
+ABC=cbind(ABC,tax.sel)
 ABC.s=split(ABC,ABC[,"Q"])
 ABC.s=mclapply(ABC.s,function(x) return(x[order(-x[,"QPCI"]),]),mc.cores=opt[["cpu"]])
-ABC.s=mclapply(ABC.s,function(x) {x[,"Q.TaxID"]=paste0("t",opt[["querytax"]]);x[,"Q.TaxTag"]=q.tax.tag;x[,"H.TaxID"]=sapply(x[,"H"],function(z) return(unlist(strsplit(z,":"))[2]));x[,"H.TaxTag"]=sapply(x[,"H"],function(z) return(unlist(strsplit(z,":"))[3]));return(x[x[,"Q.TaxID"]!=x[,"H.TaxID"],])},mc.cores=opt[["cpu"]])
 ABC.s=lapply(ABC.s,function(x) head(x,n=100))
-saveRDS(ABC.s,paste0(outdir,"/ABC.s.RDS"))
-system(paste0("md5sum ",outdir,"/ABC.s.RDS >",outdir,"/ABC.s.md5sum"))
+saveRDS(ABC.s,paste0(outdir,"/R_saved_objects/ABC.s.RDS"))
+system(paste0("md5sum ",outdir,"/R_saved_objects/ABC.s.RDS >",outdir,"/R_saved_objects/ABC.s.md5sum"))
+
+#helper functions for protein classification
+
+top_RLE=function(y,taxdata)
+{
+#get the taxon tag from the best hit as well as number of consequtive hits supporting the same tag (i.e. run length for first taxon value)
+NR_taxRLE=Rle(taxdata[,y])
+if(gsub("^.+_","",runValue(NR_taxRLE)[1])!=32644){
+return(paste0("t",runValue(NR_taxRLE)[1],":",runLength(NR_taxRLE)[1]))
+}else
+{
+return(paste0("NA:",runLength(NR_taxRLE)[1]))
+}
 }
 
-cat("Classifying individual proteins.\n")
-ABC.AllVoteSame=sapply(ABC.s,function(x) length(unique(x[,'H.TaxTag']))==1) #2852 / 530 T
 
-info(paste0("All_vote_same T/F:",paste(as.character(summary(factor(ABC.AllVoteSame,levels=c(TRUE,FALSE)))),collapse="/"),".\n"))
-
-ABC.decided=ABC.s[ABC.AllVoteSame]
-ABC.decided.6plus=names(ABC.decided)[sapply(ABC.decided,function(x) nrow(x)>=6)]
-ABC.undecided=ABC.s[!ABC.AllVoteSame]
-ABC.undecided.OK=sapply(ABC.undecided,function(x) nrow(x)>=3)
-ABC.undecided=ABC.undecided[ABC.undecided.OK]
-cut_dynRLE=function(x)
+topHitStat=function(x)
 {
-NR_taxRLE=Rle(x[,"H.TaxTag"])
-num_tax_levels=sapply(1:length(runValue(NR_taxRLE)),function(x) length(unique(runValue(NR_taxRLE)[1:x])))
-cutdown=max(which(num_tax_levels<3))
-cutdown=min(cutdown,4) #if two tags alterates, limit the number of transitions to 3 (meaning 4 runs maximum!)
-element_cutdown=sum(runLength(NR_taxRLE)[1:cutdown])
-return(x[1:element_cutdown,"H.TaxTag"])
+cat(".")
+x.tax=x[,grep("^Tax:",colnames(x))]
+colnames(x.tax)=gsub("Tax:","",colnames(x.tax))
+x.calls=unlist(lapply(colnames(x.tax),function(y) top_RLE(y,taxdata=x.tax)))
 }
 
-RLE_data=mclapply(ABC.undecided,FUN=cut_dynRLE,mc.cores=opt[["cpu"]])
-RLE_scores=unlist(mclapply(RLE_data,function(x) if(length(x)>=6){return(2)}else{return(1)},mc.cores=opt[["cpu"]]))
-gimme_UD_tax=function(x)
-{
-x.slr=sapply(split(x,x),function(x) length(x))/length(x)
-x.slr.sel=x.slr[x.slr>=0.66]
-if(length(x.slr.sel)>0)
-{
-return(names(x.slr.sel))
-}else{return("ambig")}
+jaccard = function(a, b) {
+#calculate jaccard statistics for protein hit lists (individual candidates vs proteins of alien contigs)
+    intersection = length(intersect(a, b))
+    union = length(a) + length(b) - intersection
+    return (intersection/union)
 }
 
-RLE_taxonNames=unlist(mclapply(RLE_data,FUN=gimme_UD_tax,mc.cores=opt[["cpu"]]))
-RLE_scores[RLE_taxonNames=="ambig"]=0.001
-RLE_table=data.frame(cbind(RLE_taxonNames,RLE_scores,"dynRLE"),stringsAsFactors=F)
-colnames(RLE_table)=c("TaxTag","Score","Decision")
-Uniform_table=data.frame(cbind(sapply(ABC.decided,function(x) x[1,"H.TaxTag"]),"1","UniVote"),stringsAsFactors=F)
-colnames(Uniform_table)=c("TaxTag","Score","Decision")
-Uniform_table[rownames(Uniform_table)%in%ABC.decided.6plus,"Score"]=2
-Combined_table=rbind(RLE_table,Uniform_table)
-Nodata_ID=setdiff(input.headers,rownames(Combined_table))
-Nodata_table=data.frame(matrix(rep(c("NoData","0.001","NoData"),each=length(Nodata_ID)),ncol=3),stringsAsFactors=F)
-rownames(Nodata_table)=Nodata_ID
-colnames(Nodata_table)=c("TaxTag","Score","Decision")
+info("Performing protein classification.")
 
-Combined_table=rbind(Combined_table,Nodata_table)
-Combined_table[,"TaxTag"]=tolower(Combined_table[,"TaxTag"])
-if(!all(rownames(Combined_table)%in%input.headers))
+protTaxCalls=lapply(ABC.s,FUN=topHitStat)
+cat("\n")
+protTaxCalls=do.call(rbind,protTaxCalls)
+colnames(protTaxCalls)=c("family","order","class","phylum","kingdom","superkingdom")
+
+#Proteins with no hit against the reference database receive NA:0 calls.
+empty=c("NA:0","NA:0","NA:0","NA:0","NA:0","NA:0")
+
+missprots=setdiff(input.headers,rownames(protTaxCalls))
+miss_mat=matrix(rep(empty,length(missprots)),nrow=length(missprots),byrow=T)
+colnames(miss_mat)=colnames(protTaxCalls)
+rownames(miss_mat)=missprots
+protTaxCalls=rbind(protTaxCalls,miss_mat)
+
+call_summarizer=function(x)
 {
-byedie("Data corruption found in Combined Table. That sux hard!")
+gb=list()
+tax=gsub(":.+$","",x)
+depth=as.numeric(gsub("^.+:","",x))
+s=split(depth,tax)
+sl=sapply(s,function(x) length(x))
+sl=sl[order(-sl)]
+s=s[order(-sl)]
+gb[["stats"]]=t(t(sl))
+gb[["med_depths"]]=sapply(s,function(y) median(y))
+return(gb)
 }
-saveRDS(Combined_table,paste0(outdir,"/ProteinTaxDB_ContScout.RDS"))
-protsum=summary(factor(Combined_table[,"TaxTag"]))
-protsum=cbind(names(protsum),protsum)
-colnames(protsum)=c("TaxTag","NProt")
-protsum=protsum[order(-as.numeric(protsum[,"NProt"])),]
-protsum2=apply(protsum,1,function(x) paste0(x[[1]],"\t",x[[2]]))
-protsum2=c("Protein tag summary:\n","TaxTag\tNprot",protsum2)
-cat("Protein tag summary:\n","TaxTag\tNprot\n")
-print_screen(hux(protsum))
-writeLines(protsum2,con=logfile)
-#check for no data. Throw warning, if % no data is high!
-if("nodata" %in% protsum[,"TaxTag"]&&as.numeric(protsum["nodata","NProt"])>=0.5*sum(as.numeric(protsum[,"NProt"])))
-{
-info("Warning: CountScout failed to assign taxonomy tag for more than 50% of query proteins.\n")
-}
-if(opt[["no_annot"]]){ctgDB=do.call(rbind,ctgDB)}
-no_ctg_prot=setdiff(rownames(Combined_table),ctgDB[,"ProteinID"])
-if(length(no_ctg_prot)>0)
-{
-byedie("Protein without contig information found. That should not happen at this point.")
-}
-no_tax_data=setdiff(ctgDB[,"ProteinID"],rownames(Combined_table))
-if(length(no_tax_data)>0)
-{
-info("Warning: Some protein with contig information lacks Taxon classification info.\nThis might indicate conflict between annotation and protein file.\nAffected proteins will be handled as no_data.\n")
-tax_addon_df=data.frame(matrix(NA,nrow=length(no_tax_data),ncol=3))
-rownames(tax_addon_df)=no_tax_data
-colnames(tax_addon_df)=c("TaxTag","Score","Decision")
-tax_addon_df[,"TaxTag"]="nodata"
-tax_addon_df[,"Decision"]="nodata"
-tax_addon_df[,"Score"]=0.001
-Combined_table=rbind(Combined_table,tax_addon_df)
-}
-Combined_table[,"ProteinID"]=rownames(Combined_table)
-#prepare for multi-mapper proteins! use merge here
-Combined_table=merge(Combined_table,ctgDB,by="ProteinID") #watch out for x.all, y.all switches
-Combined_table.s=split(Combined_table[,c("TaxTag","Score")],Combined_table[,"Contig"])
-Combined_table.nprot=sapply(Combined_table.s,function(x) nrow(x))
-Combined_table.s=mclapply(Combined_table.s,function(x) return(split(x[,"Score"],x[,"TaxTag"])),mc.cores=opt[["cpu"]])
-protTaxDB.sum=mclapply(Combined_table.s,function(x) sapply(x,function(y) sum(as.numeric(as.character(y)))),mc.cores=opt[["cpu"]])
+res=apply(protTaxCalls[,1:6],2,FUN=call_summarizer)
+depths=unlist(lapply(res,function(x) x$med_depths))
+names(depths)=gsub("^.+\\.","",names(depths))
+stats=lapply(res,function(x) x$stats)
 
-calc_score_ratios=function(x)
+top6_summarizer=function(x)
 {
-x.s=sum(x)
-x.r=round(x/x.s,digits=2)
-x.r=x.r[x.r>0]
-return(x.r)
+#summary of the top6 most abundant tags for each taxon rank
+x=data.frame(x,stringsAsFactors=F)
+colnames(x)="Count"
+x.sum=sum(x[,1])
+x.head=head(x,n=6)
+x.headsum=sum(x.head[,1])
+x.restsum=x.sum-x.headsum
+x.restline=data.frame(x.restsum,stringsAsFactors=F)
+rownames(x.restline)="Other"
+colnames(x.restline)="Count"
+x.head=rbind(x.head,x.restline)
+x.head[,"Percentage"]=round(x.head[,"Count"]/sum(x.head[,"Count"])*100)
+x.head[,"MedRLE_Len"]=depths[rownames(x.head)]
+return(x.head)
+}
+stats=lapply(stats,FUN=top6_summarizer)
+xls_out=paste0(outdir,"/diag_data/",opt[["what"]],"_Top6_TaxonProtTags.xlsx")
+
+info("Exporting taxon tag statistics on individual proteins.")
+
+for (s in names(stats))
+{
+data.out=stats[[s]]
+data.out=cbind("NA",data.out)
+colnames(data.out)[1]="TaxonName"
+data.out=cbind("NA",data.out)
+colnames(data.out)[1]="TaxID"
+rownames(data.out)[rownames(data.out)=="NA"]="No_data"
+data.out[rownames(data.out)=="No_data",c("MedRLE_Len")]="NA"
+data.out[rownames(data.out)=="Other",c("MedRLE_Len")]="NA"
+data.out[,"TaxID"]=gsub("^t","",rownames(data.out))
+#we convert NCBI Taxon IDs to taxon names
+data.out[grep("^t\\d+",rownames(data.out)),"TaxonName"]=as.character(taxDict[grep("^t\\d+",rownames(data.out),value=T)])
+write.xlsx(data.out, xls_out, sheetName = s, 
+  col.names = TRUE, row.names = FALSE, append = TRUE)
 }
 
-CTG_TaxCalls=mclapply(protTaxDB.sum,FUN=calc_score_ratios,mc.cores=opt[["cpu"]])
-CTG_TaxCalls=mclapply(CTG_TaxCalls,function(x) return(names(x)[x>=2/3]),mc.cores=opt[["cpu"]])
-CTG_TaxCalls[sapply(CTG_TaxCalls,function(x) length(x)==0)]="undecided"
-CTG_TaxCalls=unlist(CTG_TaxCalls)
-CTG_TaxCalls=cbind(names(CTG_TaxCalls),CTG_TaxCalls,Combined_table.nprot)
-CTG_TaxCalls=data.frame(CTG_TaxCalls,stringsAsFactors=T)
-colnames(CTG_TaxCalls)=c("Contig","ContigTax","NumProt")
+ctgDB=cbind(ctgDB,protTaxCalls[ctgDB[,"ProteinID"],])
+saveRDS(ctgDB,paste0(outdir,"/R_saved_objects/ctgDB_with_taxCalls.RDS"))
+ctgDB.s=split(ctgDB,ctgDB[,"Contig"]) #94
+ctgDB.sl=sapply(ctgDB.s,function(x) nrow(x))
+ctgDB.sl=cbind(names(ctgDB.sl),ctgDB.sl)
+colnames(ctgDB.sl)=c("Ctg.ID","NProt")
 
-Combined_table2=merge(Combined_table,CTG_TaxCalls,by="Contig")
-Combined_table2[,"outID"]=paste0(Combined_table2[,"ProteinID"]," ProtTag:",Combined_table2[,"TaxTag"],"|ContigTag:",Combined_table2[,"ContigTax"],"|CtgNumProt:",Combined_table2[,"NumProt"])
-rownames(Combined_table2)=Combined_table2[,"ProteinID"]
-
-CTG_TaxCalls_sum=split(as.numeric(as.character(CTG_TaxCalls[,"NumProt"])),CTG_TaxCalls[,"ContigTax"])
-CTG_TaxCalls_sumsum=sapply(CTG_TaxCalls_sum,function(x) sum(x))
-CTG_TaxCalls_sumsum_called=CTG_TaxCalls_sumsum[!names(CTG_TaxCalls_sumsum)%in%c("undecided","ambig","nodata")]
-
-CTG_TaxCalls_Mat=data.frame(matrix(NA,ncol=3,nrow=length(CTG_TaxCalls_sum)),stringsAsFactors=F)
-colnames(CTG_TaxCalls_Mat)=c("Call","NumCtg","NumTotalProt")
-CTG_TaxCalls_Mat[,"Call"]=names(CTG_TaxCalls_sum)
-CTG_TaxCalls_Mat[,"NumCtg"]=sapply(CTG_TaxCalls_sum,function(x) length(x))
-CTG_TaxCalls_Mat[,"NumTotalProt"]=sapply(CTG_TaxCalls_sum,function(x) sum(x))
-ctgTagsum2=apply(CTG_TaxCalls_Mat,1,function(x) paste0(x[[1]],"\t",x[[2]],"\t",x[[3]]))
-ctgTagsum2=c("\nContig-based tag summary on all proteins:\n","CtgBasedTag\tNCtg\tNProts",ctgTagsum2)
-info(ctgTagsum2)
-
-
-if("undecided"%in%names(CTG_TaxCalls_sumsum)&&CTG_TaxCalls_sumsum[["undecided"]]/sum(CTG_TaxCalls_sumsum)>=0.33){
-info(paste0("Warning! Too many proteins (",round(CTG_TaxCalls_sumsum[["undecided"]]/sum(CTG_TaxCalls_sumsum)*100,digits=0),"%) belong to ambiguous contigs.","\n","This might indicate assembly error, scaffolding error or genomes that are heterogenous (some protists).","\n",
-"Protein filtering results are likely to be inaccurate for this query genome!","\n"))
-} else if (!q.tax.tag%in%names(CTG_TaxCalls_sumsum_called) || CTG_TaxCalls_sumsum_called[[q.tax.tag]]/sum(CTG_TaxCalls_sumsum_called)<0.5)
+adjust_counts=function(x)
 {
-info(paste0('Warning! Less than 50% of the classified query proteins are located on "',q.tax.tag,'"'," contigs.\n"))
-info(paste0("This can indicate a massive contamination, or an invalid query taxon value! (Input: ",opt["querytax"],",",q.tax.tag,").\n"))
-}
-if(any(DropTax=="all"))
+#this function performs vote weight. If there are many reference proteins backing up the taxon call, query gets a score close to 2. Otherwise, it gets a score close to 1. 
+if(x==0)
 {
-DropCTG=CTG_TaxCalls[!CTG_TaxCalls[,"ContigTax"]%in%c("undecided","nodata","ambig",q.tax.tag),]
+return(0)
 }else{
-DropCTG=CTG_TaxCalls[CTG_TaxCalls[,"ContigTax"]%in%DropTax,]
+return(2-1/x) 
+}
 }
 
-saveRDS(DropCTG,paste0(outdir,"/DropContig.RDS")) #scaffold_172, scaffold_279 Bjead1_1_124264, Bjead1_1_98652
-DropProts=unique(Combined_table2[as.character(Combined_table2[,"Contig"])%in%as.character(DropCTG[,"Contig"]),"ProteinID"]) 
-saveRDS(DropProts,paste0(outdir,"/DropProts.RDS"))
-#here comes stats, and dropseq labeling
-suppressPackageStartupMessages(library("Biostrings"))
-d=readAAStringSet(protfile)
-names(d)=gsub(" .+$","",names(d))
-GhostProteinDB=d[names(d)%in%GhostProts]
-writeXStringSet(GhostProteinDB,paste0(opt[["outdir"]],"/Ghost.ProteinSeq.faa"))
-
-d2=d[!names(d)%in%DropProts]
-d.drop=d[names(d)%in%DropProts]
-names(d.drop)=Combined_table2[names(d.drop),"outID"]
-
-drop_prot_calls=gsub("^.+ProtTag:","",gsub("\\|.+$","",names(d.drop)))
-drop_ctg_calls=gsub("\\|.+$","",gsub("^.+ContigTag:","",names(d.drop)))
-
-protTagsum=summary(factor(drop_prot_calls))
-protTagsum=cbind(names(protTagsum),protTagsum)
-colnames(protTagsum)=c("TaxTag","NProt")
-protTagsum=data.frame(protTagsum,stringsAsFactors=F)
-protTagsum=protTagsum[order(-as.numeric(protTagsum[,"NProt"])),]
-protTagsum2=apply(protTagsum,1,function(x) paste0(x[[1]],"\t",x[[2]]))
-protTagsum2=c("\nProtein tag summary on removed proteins:\n","ProtTaxTag\tNprots",protTagsum2)
-info(protTagsum2)
-
-dropCTG_TaxCalls_sum=split(as.numeric(as.character(DropCTG[,"NumProt"])),DropCTG[,"ContigTax"])
-
-dropCTG_TaxCalls_Mat=data.frame(matrix(NA,ncol=3,nrow=length(CTG_TaxCalls_sum)),stringsAsFactors=F)
-colnames(dropCTG_TaxCalls_Mat)=c("Call","NumCtg","NumTotalProt")
-dropCTG_TaxCalls_Mat[,"Call"]=names(dropCTG_TaxCalls_sum)
-dropCTG_TaxCalls_Mat[,"NumCtg"]=sapply(dropCTG_TaxCalls_sum,function(x) length(x))
-dropCTG_TaxCalls_Mat[,"NumTotalProt"]=sapply(dropCTG_TaxCalls_sum,function(x) sum(x))
-ctgTagsum2=apply(CTG_TaxCalls_Mat,1,function(x) paste0(x[[1]],"\t",x[[2]],"\t",x[[3]]))
-ctgTagsum2=c("\nContig-based tag summary on all proteins:\n","CtgBasedTag\tNCtg\tNProts",ctgTagsum2)
-info(ctgTagsum2)
-
-info("Checking inconsistency between DropProt list and Contamination sequence file.")
-issue=setdiff(DropProts,gsub(" .+$","",names(d.drop)))
-if(length(issue)==0)
+CTG_caller=function(x)
 {
-info("No inconsistency between DropProt and Contamination sequence file found.\n")
-}else{
-info("The following mismatch between DropProt and Contamination sequence file was found:\n")
-info(paste(issue,collapse="\n"))
+tags=gsub(":\\d+","",x)
+counts=as.numeric(gsub("^.+:","",x))
+counts2=sapply(counts,FUN=adjust_counts)
+tags.s=split(counts2,tags)
+
+if(opt[["unknown"]]=="drop" && "NA"%in%names(tags.s))
+{
+#if requested, user can consider "NA" taxon calls in the consensus contig call. By default, they are ignored and only the votes of proteins with reference taxon information matter.
+tags.s[["NA"]]=tags.s[["NA"]]+1 #we set the NA count data to 1, so that "unknown" proteins will be considered as a mismatching taxon tag
 }
 
-writeXStringSet(d2,paste0(opt[["outdir"]],"/Cleaned.ProteinSeq.faa"))
-writeXStringSet(d.drop,paste0(opt[["outdir"]],"/Contamination.ProteinSeq.faa"))
-info("Contscount finished.\n")
-time_finish=Sys.time()
-timediff=time_finish-time_start
-print(timediff)
-info(paste0("Time (minutes) passed: ",round(as.numeric(timediff,unit="mins"),digits=0)))
-close(logfile)
+tags.sum=sapply(tags.s,function(x) sum(x))
+bigsum=sum(tags.sum) #sum score for all considered taxon tags. 
+ratios=tags.sum/bigsum
+ratios.sel=ratios[ratios>as.numeric(opt[["consensus"]])] #consensus taxon tag selection. Consensus means > than opt[["consensus"]] threshold parmeter: -C, values: 0.5 < x <= 0.9999 
+if(length(ratios.sel)==1){
+return(c(names(ratios.sel),ratios.sel))
+}else{
+return(c(NA,NA))
+}
+}
+info("Performing scaffold (contig) taxon calls.")
+res=lapply(ctgDB.s,function(t) lapply(c("family","order","class","phylum","kingdom","superkingdom"),function(x) CTG_caller(t[,x])))
+ressum=lapply(res,function(x) sapply(x,function(y) return(y[[1]])))
+ressum=do.call(rbind,ressum)
+rescall=t(apply(ressum,1,function(x) as.numeric(x==query_taxline)))
+if(opt[["unknown"]]=="drop")
+{rescall[is.na(rescall)]=0}
+rescall=cbind(rownames(rescall),rescall)
+colnames(rescall)=c("Ctg.ID","family","order","class","phylum","kingdom","superkingdom")
 
+rescall=merge(rescall,ctgDB.sl,all.x=T,all.y=T,by="Ctg.ID")
+rescall=rescall[order(-as.numeric(rescall[,"NProt"])),]
+
+rescall_tag=apply(rescall,1,function(x) return(paste(x[2:7],collapse="")))
+rescall_tag.s=summary(factor(rescall_tag))
+tagdir=data.frame(rescall_tag.s)
+tagdir=cbind(tagdir,rownames(tagdir))
+tagdir=tagdir[order(-tagdir[,1]),]
+
+#creating a result call matrix. 1 means taxon is supported. 0 means taxon conflict between contig and host. NA means non-classified contig, without any consensus tag.
+rescall_outfile=paste0(outdir,"/diag_data/",opt[["what"]],"_ContigTaxSupportData.xlsx")
+write.xlsx(rescall, rescall_outfile, sheetName = "ContigTaxonSupport", 
+  col.names = TRUE, row.names = FALSE, append = FALSE)
+
+saveRDS(rescall,paste0(outdir,"/R_saved_objects/rescall.RDS"))
+saveRDS(ctgDB.s,paste0(outdir,"/R_saved_objects/ctgDB.s.RDS"))
+tagdir[,"PC"]=round(tagdir[,"rescall_tag.s"]/sum(tagdir[,"rescall_tag.s"])*100,digits=2)
+colnames(tagdir)=c("NumContig","TaxSupportFlag","PC")
+tagdir=tagdir[,c("NumContig","PC","TaxSupportFlag")]
+
+rescall[is.na(rescall)]=3 #replace NA, meaning no data into 3, so that ==0 comparison is meaningful
+
+#support factor coding: 1 means query and host taxon matches. 2 means query and host taxon mismatches. 3 means there is no taxon information available for query
+
+rescall[,"ContigSupport"]=apply(rescall[,2:7],1,function(y) paste0(y,collapse=""))
+rownames(rescall)=rescall[,"Ctg.ID"]
+ABC1.s=lapply(ABC.s,function(y) y[1,])
+ABC1.t=do.call(rbind,ABC1.s)
+ABC1.tax=ABC1.t[,grep("Tax:",colnames(ABC1.t))]
+colnames(ABC1.tax)=gsub("Tax:","",colnames(ABC1.tax))
+ABC1.call=apply(ABC1.tax,1,function(y) paste(as.numeric(y==gsub("^t","",query_taxline)),collapse=""))
+rownames(ctgDB)=ctgDB[,"ProteinID"]
+ctgDB[,"ProtSupport"]=ABC1.call[rownames(ctgDB)]
+ctgDB[is.na(ctgDB[,"ProtSupport"]),"ProtSupport"]=333333
+ctgDB.s=split(ctgDB,ctgDB[,"Contig"]) 
+ctgDB.sl=sapply(ctgDB.s,function(y) nrow(y))
+
+
+prot.callstats=summary(factor(ctgDB[,"ProtSupport"]),maxsum=nrow(ctgDB))
+prot.callstats=(prot.callstats[order(-prot.callstats)])
+
+unknownprot.ratio=round(prot.callstats["333333"]/sum(prot.callstats)*100,digits=2)
+#Throw a warning if the ratio of unclassified proteins is high. That can affect ContScout ability to detect contamination.
+
+if(unknownprot.ratio>50)
+{info("Warning! More than 50% of the query proteins have no related sequence in the reference database!") }else if((unknownprot.ratio>25))
+{info("Warning! More than 25% of the query proteins have no related sequence in the reference database!") }
+saveRDS(prot.callstats,paste0(outdir,"/R_saved_objects/prot.callstats.RDS"))
+
+drop_contigs=lapply(c("family","order","class","phylum","kingdom","superkingdom"),function(y) return(rownames(rescall)[rescall[,y]==0]))
+names(drop_contigs)=c("family","order","class","phylum","kingdom","superkingdom")
+drop.ctgDB=lapply(drop_contigs,function(y) ctgDB[ctgDB[,"Contig"]%in%y,])
+keep.ctgDB=lapply(drop_contigs,function(y) ctgDB[!ctgDB[,"Contig"]%in%y,])
+saveRDS(drop.ctgDB,paste0(outdir,"/R_saved_objects/drop_contig_DB.RDS"))
+
+ABC.drop=lapply(names(drop.ctgDB),function(y){prots=drop.ctgDB[[y]][,"ProteinID"];return(ABC.s[names(ABC.s)%in%prots])})
+names(ABC.drop)=names(drop.ctgDB)
+saveRDS(ABC.drop,paste0(outdir,"/R_saved_objects/ABC_data_for_dropped.RDS"))
+
+RLE_depths=ctgDB[,c("family","order","class","phylum","kingdom","superkingdom","ProtSupport")]
+for(i in 1:(ncol(RLE_depths)-1))
+{
+RLE_depths[,i]=as.numeric(gsub("^.+:","",RLE_depths[,i]))
+}
+
+RLE_depths=split(RLE_depths[,1:6],RLE_depths[,7])
+RLE_depths=lapply(RLE_depths,function(x) {d=lapply(c("family","order","class","phylum","kingdom","superkingdom"),function(y) return(x[,y]));names(d)=c("family","order","class","phylum","kingdom","superkingdom");return(d)})
+RLE_depths=unlist(RLE_depths,recursive=F)
+
+names(RLE_depths)=paste0(names(RLE_depths),":")
+RLE_depths=unlist(RLE_depths)
+names(RLE_depths)=gsub("^.+\\.","",gsub(":.*$","",names(RLE_depths)))
+RLE.s=split(RLE_depths,names(RLE_depths))
+RLEmed.s=lapply(RLE.s,function(y) median(y))
+RLE.s_no_null=lapply(RLE.s,function(y) return(y[y>0]))
+RLEmed.s=lapply(RLE.s,function(y) median(y))
+RLEmed_no_null.s=lapply(RLE.s_no_null,function(y) median(y))
+
+info("Calculating diagnostic summaries for each taxon level.")
+
+do.stats=function(x)
+{
+#creating a summary statistics that shall guide the user when assessing filtering performance of CS at different taxon ranks
+indiv_protsupport.x=substr(ctgDB[,"ProtSupport"],offsets[x],offsets[x])
+if(opt[["unknown"]]=="keep"){
+#default, permissive approach. Keeping unknown contigs
+indiv_protdrop.x=ctgDB[indiv_protsupport.x==0,"ProteinID"]
+indiv_protkeep.x=ctgDB[indiv_protsupport.x%in%c(1,3),"ProteinID"] 
+}else{
+#this is strict approach, Dropping unknown contigs. 
+indiv_protdrop.x=ctgDB[indiv_protsupport.x%in%c(0,3),"ProteinID"] 
+indiv_protkeep.x=ctgDB[indiv_protsupport.x==1,"ProteinID"]
+}
+indiv_tags.dropped.x=sapply(ABC1.s[indiv_protdrop.x],function(y) return(paste0("t",y[,paste0("Tax:",x)])))
+indiv_tags.kept.x=sapply(ABC1.s[indiv_protkeep.x],function(y) return(paste0("t",y[,paste0("Tax:",x)])))
+indiv_tags.dropped.x[indiv_tags.dropped.x=="t"]="noABCdata"
+indiv_tags.kept.x[indiv_tags.kept.x=="t"]="noABCdata"
+ctgdrop.x=drop.ctgDB[[x]]
+ctgkeep.x=keep.ctgDB[[x]]
+contig_protdrop.x=ctgdrop.x[,"ProteinID"]
+contig_protkeep.x=ctgkeep.x[,"ProteinID"]
+ctg_tags.dropped.x=sapply(ABC1.s[contig_protdrop.x],function(y) return(paste0("t",y[,paste0("Tax:",x)])))
+ctg_tags.kept.x=sapply(ABC1.s[contig_protkeep.x],function(y) return(paste0("t",y[,paste0("Tax:",x)])))
+
+ctg_tags.dropped.x[ctg_tags.dropped.x=="t"]="noABCdata"
+ctg_tags.kept.x[ctg_tags.kept.x=="t"]="noABCdata"
+
+tagsummary=list()
+tagsummary[["indiv_prot_dropped"]]=summary(factor(indiv_tags.dropped.x),maxsum=length(indiv_tags.dropped.x))
+tagsummary[["indiv_prot_kept"]]=summary(factor(indiv_tags.kept.x),maxsum=length(indiv_tags.kept.x))
+tagsummary[["ctg_prot_dropped"]]=summary(factor(ctg_tags.dropped.x),maxsum=length(ctg_tags.dropped.x))
+tagsummary[["ctg_prot_kept"]]=summary(factor(ctg_tags.kept.x),maxsum=length(ctg_tags.kept.x))
+tagsummary=lapply(tagsummary,function(x) return(x[order(-x)]))
+
+tagsummary[["mix_tags"]]=intersect(ctg_tags.dropped.x,ctg_tags.kept.x)
+if(length(tagsummary[["mix_tags"]])>0)
+{
+tagsummary[["ctg_mix_dropped"]]=tagsummary[["ctg_prot_dropped"]][names(tagsummary[["ctg_prot_dropped"]])%in%tagsummary[["mix_tags"]]]
+tagsummary[["ctg_mix_dropped"]]=tagsummary[["ctg_mix_dropped"]][tagsummary[["mix_tags"]]]
+tagsummary[["ctg_mix_kept"]]=tagsummary[["ctg_prot_kept"]][names(tagsummary[["ctg_prot_kept"]])%in%tagsummary[["mix_tags"]]]
+tagsummary[["ctg_mix_kept"]]=tagsummary[["ctg_mix_kept"]][tagsummary[["mix_tags"]]]
+tagsummary[["tagmatrix"]]=data.frame(cbind(tagsummary[["ctg_mix_dropped"]],tagsummary[["ctg_mix_kept"]],round(tagsummary[["ctg_mix_dropped"]]/(tagsummary[["ctg_mix_dropped"]]+tagsummary[["ctg_mix_kept"]]),digits=2)),stringsAsFactors=F)
+colnames(tagsummary[["tagmatrix"]])=c("Dropped","Kept","Ratio")
+tagsummary[["tagmatrix"]]=tagsummary[["tagmatrix"]][!rownames(tagsummary[["tagmatrix"]])%in%c("noABCdata","t32644"),]
+}else
+{
+tagsummary[["ctg_mix_dropped"]]=0
+tagsummary[["ctg_mix_kept"]]=0
+tagsummary[["tagmatrix"]]=data.frame(matrix(nrow=0,ncol=3))
+colnames(tagsummary[["tagmatrix"]])=c("Dropped","Kept","Ratio")
+}
+saveRDS(tagsummary,paste0(outdir,"/",x,".tagsummary.RDS"))
+giveback=list()
+
+any_dropped=union(indiv_protdrop.x,contig_protdrop.x)
+
+giveback[["Jaccard"]]=round(jaccard(a=indiv_protdrop.x,b=contig_protdrop.x),digits=2)
+giveback[["NumProts"]]=nrow(ctgDB)
+taxtable.sel=taxtable[taxtable[,x]==paste0("t",query_taxline[x]),]
+taxtable.sel=taxtable.sel[rownames(taxtable.sel)!=opt[["querytax"]],]
+taxtable.sel=taxtable.sel[as.numeric(taxtable.sel[,"NumProts"])>=giveback[["NumProts"]]/2,]
+
+giveback[["NumFriends"]]=nrow(taxtable.sel)
+giveback[["NumNoData"]]=sum(ctgDB[,"ProtSupport"]==333333)
+giveback[["medRLE"]]=RLEmed.s[[x]]
+
+giveback[["medRLE_no_null"]]=RLEmed_no_null.s[[x]]
+giveback[["Indiv_ProtDrop"]]=length(indiv_protdrop.x)
+giveback[["Contig_ProtDrop"]]=length(ctgdrop.x[,"ProteinID"])
+giveback[["IndivNTagsKept"]]=length(unique(tagsummary[["indiv_prot_kept"]]))
+giveback[["IndivNTagsDropped"]]=length(unique(tagsummary[["indiv_prot_dropped"]]))
+giveback[["ContigTagsKept"]]=length(unique(tagsummary[["ctg_prot_kept"]]))
+giveback[["ContigTagsDropped"]]=length(unique(tagsummary[["ctg_prot_dropped"]]))
+giveback[["NMixedTags"]]=nrow(tagsummary[["tagmatrix"]])
+if(giveback[["NMixedTags"]]>0){
+giveback[["MixedTags_KeptProts"]]=sum(tagsummary[["tagmatrix"]][rownames(tagsummary[["tagmatrix"]])!=paste0("t",query_taxline[[x]]),"Kept"])
+giveback[["MixedTags_DroppedProts"]]=sum(tagsummary[["tagmatrix"]][rownames(tagsummary[["tagmatrix"]])!=query_taxline[[x]],"Dropped"])
+giveback[["MixedTags_KeptHostProts"]]=sum(tagsummary[["tagmatrix"]][query_taxline[[x]],"Kept"])
+giveback[["MixedTags_DroppedHostProts"]]=sum(tagsummary[["tagmatrix"]][query_taxline[[x]],"Dropped"])
+if(is.na(giveback[["MixedTags_KeptHostProts"]])){giveback[["MixedTags_KeptHostProts"]]=0}
+if(is.na(giveback[["MixedTags_DroppedHostProts"]])){giveback[["MixedTags_DroppedHostProts"]]=0}
+}else{
+giveback[["MixedTags_KeptProts"]]=0
+giveback[["MixedTags_DroppedProts"]]=0
+giveback[["MixedTags_KeptHostProts"]]=0
+giveback[["MixedTags_DroppedHostProts"]]=0
+}
+return(giveback)
+}
+res=lapply(c("family","order","class","phylum","kingdom","superkingdom"),FUN=do.stats)
+names(res)=c("family","order","class","phylum","kingdom","superkingdom")
+
+resu=list()
+resu[[1]]=res
+names(resu)[[1]]=opt[["querytax"]]
+
+resu2=lapply(names(resu),function(x) {dd=resu[[x]];lapply(names(dd),function(y) {d=dd[[y]];return(c(x,y,d[["ContigTagsDropped"]],d[["ContigTagsKept"]],d[["NMixedTags"]],d[["MixedTags_DroppedProts"]],d[["MixedTags_KeptProts"]],d[["MixedTags_DroppedHostProts"]],d[["MixedTags_KeptHostProts"]],d[["Jaccard"]],d[["NumFriends"]],d[["medRLE"]],d[["medRLE_no_null"]],d[["Indiv_ProtDrop"]],d[["Contig_ProtDrop"]],d[["NumNoData"]],d[["NumProts"]]))})})
+names(resu2)=names(resu)
+resu2=lapply(resu2,function(x) do.call(rbind,x))
+resu2=lapply(resu2,function(x)
+{colnames(x)=c("QueryTaxonID","Rank","NumTagsDropByCtg","NumTagsKeptByCtg","NumMixedTags","MixedTagProtsDropByCtg","MixedTagProtsKeptByCtg","MixedTags_HostProtsDropByCtg","MixedTags_HostProtsKeptByCtg","Jaccard","NumRelSP","MedRLE","medRLE_no_null","IndivProtDrop","CtgProtDrop","NumNoData","NumProts");return(x)})
+
+resu3=do.call(rbind,resu2)
+options(width=200)
+
+resu3[,"QueryTaxonID"]=gsub("^t","",query_taxline)
+resu3=cbind(taxDict[query_taxline],resu3)
+colnames(resu3)[1]="QueryTaxonName"
+diagxls_out=paste0(outdir,"/diag_data/",opt[["what"]],"_RunDiag.xlsx")
+write.xlsx(resu3, diagxls_out, sheetName = "RunDiag", 
+  col.names = TRUE, row.names = FALSE, append = TRUE)
+#At each taxon rank, we callect all dropped proteins / contigs up in the taxon lineage (superkingdom, superkingdom+kingdom, superkingdom+kingdom+phylum)
+cumulative_ctg_drop=lapply(1:length(offsets),function(x) return(unique(unlist(drop_contigs[x:length(offsets)]))))
+cumulative_prot_drop=lapply(cumulative_ctg_drop,function(x) return(ctgDB[ctgDB[,"Contig"]%in%x,]))
+names(cumulative_ctg_drop)=names(cumulative_prot_drop)=names(offsets)
+
+library(Biostrings)
+protDB=readAAStringSet(protfile)
+protDB.TrimNames=gsub(" .+","",names(protDB))
+
+saveRDS(cumulative_ctg_drop,paste0(outdir,"/R_saved_objects/cumulative_ctg_drop.RDS"))
+saveRDS(cumulative_prot_drop,paste0(outdir,"/R_saved_objects/cumulative_prot_drop.RDS"))
+
+fa_exporter=function(x)
+{
+#This function creates the output folders (one per taxon rank) and saves unfiltered / filtered fasta files there. 
+info(paste0("Exporting filtered data, processed at ",'"',x,'"', " level."))
+outsubdir=paste0(opt[["outdir"]],"/filtered_outputs/",x,"_level/")
+dir.create(outsubdir)
+dropped_prot_taxdata=cumulative_prot_drop[[x]]
+for(i in colnames(dropped_prot_taxdata)){
+dropped_prot_taxdata[,i]=gsub("^t","",dropped_prot_taxdata[,i])
+}
+dpt_excelfile=paste0(outsubdir,"dropped_protein_taxontable.xlsx")
+
+if(nrow(dropped_prot_taxdata)>0){
+write.xlsx(dropped_prot_taxdata,dpt_excelfile,sheetName="DroppedProteinTax")
+}else
+{
+write.xlsx("No contaminating protein was found.",dpt_excelfile,sheetName="DroppedProteinTax")
+}
+kept=protDB[!protDB.TrimNames%in%dropped_prot_taxdata[,"ProteinID"]]
+dropped=protDB[protDB.TrimNames%in%dropped_prot_taxdata[,"ProteinID"]]
+writeXStringSet(kept,paste0(outsubdir,opt[["what"]],"_kept_proteins.fasta"))
+writeXStringSet(dropped,paste0(outsubdir,opt[["what"]],"_dropped_proteins.fasta"))
+message=c(paste0("Processed ",length(protDB)," proteins."),paste0("Marked for removal: ",nrow(dropped_prot_taxdata)),paste0("Found and removed: ",length(dropped)),paste0("Kept: ",length(kept)))
+info(message)
+
+if(nrow(dropped_prot_taxdata)/length(protDB)>0.95)
+{
+info(paste0("Warning, more than 95% the proteins were marked as contamination at ",'"',x,'"', " level.\nPlease double-check that the NCBI taxon ID was properly set for the host."))
+}else if(nrow(dropped_prot_taxdata)/length(protDB)>=0.5)
+{
+info(paste0("Warning, more than half of the proteins were marked as contamination at ",'"',x,'"', " level."))
+}
+return(0)
+}
+res=lapply(names(cumulative_ctg_drop),FUN=fa_exporter)
+
+
+cat("ContScout finished.\n")
+#EOF#
