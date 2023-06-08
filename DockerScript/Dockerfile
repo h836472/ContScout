@@ -37,7 +37,6 @@ echo 'options(Ncpus = XX)' >>~/.R/Makevars
 RUN \
     R -e "if(!require('optparse',quietly=TRUE)) {install.packages('optparse',dependencies=TRUE,repos='http://cran.rstudio.com/')}" && \
     R -e "if(!require('bitops',quietly=TRUE)) {install.packages('bitops',dependencies=TRUE,repos='http://cran.rstudio.com/')}" && \
-    R -e "if(!require('huxtable',quietly=TRUE)) {install.packages('huxtable',dependencies=TRUE,repos='http://cran.rstudio.com/')}" && \
     R -e 'if (!require("BiocManager", quietly = TRUE)) {install.packages("BiocManager",dependencies=TRUE,repos="http://cran.rstudio.com/")}' &&\
     R -e 'if(!require('Biostrings',quietly=TRUE)) {BiocManager::install("Biostrings")}' &&\	
     R -e 'if(!require('rtracklayer',quietly=TRUE)) {BiocManager::install("rtracklayer")}' &&\	
