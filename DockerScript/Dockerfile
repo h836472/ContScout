@@ -23,7 +23,7 @@ cd R-4.1.2 &&\
     --with-blas \
     --with-lapack=\
     --with-x=no &&\
-alias make="make -j $ncpu"    
+alias make="make -j $ncpu"    &&\
 make &&\
 make install &&\
 cd .. &&\
