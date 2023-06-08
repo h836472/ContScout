@@ -33,6 +33,7 @@ suppressPackageStartupMessages(library("bitops"))
 suppressPackageStartupMessages(library("GenomicRanges"))
 suppressPackageStartupMessages(library("rtracklayer"))
 suppressPackageStartupMessages(library("xlsx"))
+suppressPackageStartupMessages(library("psych"))
 
 cargs=commandArgs(trailingOnly=T)
 option_list = list(
@@ -190,6 +191,12 @@ if (is.null(opt[["inputdir"]]))
 {
 byedie("Please specify an input directory that contains the protein sequence and annotation file!\n")
 }
+
+if (!dir.exists((opt[["inputdir"]])))
+{
+byedie("Could not open input directory at ",'"",opt[["inputdir"]],'"'!\n")
+}
+
 setwd(opt[["inputdir"]])
 
 
