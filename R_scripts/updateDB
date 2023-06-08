@@ -1,77 +1,50 @@
 #!/usr/bin/Rscript
-
 ###########################
 #library and arguments init
 ###########################
+startdir=getwd()
+time_start=Sys.time()
+logfilename=paste0("ContScout_Updater_",format(time_start,"%d%b_%Y_%H_%M"),".log")
+logfile=file(logfilename,open="a") 
 progname="updateDB"
 cat("This is the database updater component of ContScout.\n")
 cat("Loading R libraries.\n") 
 suppressPackageStartupMessages(library("optparse"))
+
 suppressPackageStartupMessages(library(parallel))
 suppressPackageStartupMessages(library(rjson))
 suppressPackageStartupMessages(library(XML))
-
+suppressPackageStartupMessages(library(googlesheets4))
+suppressPackageStartupMessages(library("GenomicRanges"))
+cargs=commandArgs(trailingOnly=T)
 option_list = list(
-make_option(c("-u", "--userdir"), type="character", default=NULL, 
+  make_option(c("-u", "--userdir"), type="character", default=NULL, 
               help="Path to local database repository folder", metavar="userdir"),
-make_option(c("-d", "--dbname"), type="character", default=NULL,
-                help='Database to download ("uniprot","uniref100","nr","refseq_protein")', metavar="dbname"),
-make_option(c("-i", "--info"), type="character", default="https://github.com/h836472/ContScout/raw/main/DataBaseInfo/DB.info.txt",
-                help='Database info file with public database URLs', metavar="info"),
-make_option(c("-c", "--cpu"), type="integer", default=0,
-                help='Number of CPU-s to use. By default (-c 0) we use all CPUs available.', metavar="cpu"),
-make_option(c("f", "--format"), type="character", default="DM", 
-                help='Which database format to use (D for Diamond, M for MMSeqs).', metavar="FORMAT"),
-make_option(c("-l", "--localDB"), type="character", default=NULL,
-              help="Local mirror folder to download databases from. For development / testing only.", metavar="localDB"),
-make_option(c("-y", "--yes"), action="store_true", default=FALSE,
-              help="Automatically answer yes to all question. Enables batch database download.", metavar="yes"));
-
+  make_option(c("-i", "--info"), type="character", default="https://docs.google.com/spreadsheets/d/1_FPaAnyHVUhHzV8gwic2X3RKaN9vSl9jcTN_50T7X24", 
+              help="Path to local database repository folder", metavar="userdir"),
+  make_option(c("-l", "--list_databases"), action="store_true", default=FALSE,
+              help="List pre-formatted databases stored in the local database repository."),
+  make_option(c("-c", "--cpu"), type="character", default="all", 
+              help="Number of CPUs to use", metavar="cpu"),
+  make_option(c("-d", "--dbname"), type="character", default=NULL,help="Name of the database to be used as a reference",metavar="dbname"));
 opt_parser = OptionParser(option_list=option_list,prog=progname);
+
 if(FALSE)
 {
 #manually set options, if you run the code interactively, for debugging/development
 opt=list()
-
-opt[["dbname"]]="uniprotSP" #-d
-opt[["cpu"]]=8 #-c 
-opt[["format"]]="DM" #-f
-opt[["localDB"]]=TRUE #-l
-opt[["yes"]]=FALSE #-y
-
-#Perlmutter
-opt[["userdir"]]="/pscratch/sd/b/balintb/databases_dev" #-u
-opt[["info"]]="/pscratch/sd/b/balintb/databases.dev/dbinfo.txt" #-i
-
-#komondor
-opt[["userdir"]]="/home/g6y1acd/databases_dev" #-u
-opt[["info"]]="/home/g6y1acd/databases.dev/dbinfo.txt" #-i
-
-
+opt[["dbname"]]="swissprot" #-d
+opt[["cpu"]]=24 #-c 
+opt[["info"]]="https://docs.google.com/spreadsheets/d/1_FPaAnyHVUhHzV8gwic2X3RKaN9vSl9jcTN_50T7X24"
+opt[["userdir"]]="/work/balintb/databases_dev"
 
 }else{
 opt = parse_args(opt_parser);
 }
-
-###############################
-#URL data init from -i (--info)
-###############################
-
-
-#download public database URL information from GitHub repository or open from local file
-
-if(grepl("^http",opt[["info"]])){
-DBinfo=read.table(url(opt[["info"]]),sep=",",as.is=T,row.name=1,header=T)
-}else
-{
-DBinfo=read.table(opt[["info"]],sep=",",as.is=T,row.name=1,header=T)
-}
-
-
 ###################################
 #generic logging and info functions
 ###################################
-byedie=function(x,log=TRUE,sure_q=TRUE){
+byedie=function(x,log=TRUE,sure_q=FALSE){
 cat(x)
 if(log)
  {
@@ -86,7 +59,16 @@ if(sure_q)
  }
 }
 
-info=function(x,log=T){
+if(is.null(opt[["dbname"]])){
+byedie("Please specify a database to be downloaded. Example: -d swissprot")
+}
+
+if(is.null(opt[["userdir"]]))
+{
+byedie("Please provide the path to your user directory with the pre-formatted reference databases.\n If you do not have any local database yet, you can use the tool \'updateDB\'.")
+}
+
+info=function(x,log=F){
 cat(paste(x,"\n"))
 if(log)
  {
@@ -98,32 +80,12 @@ jacksum=function(x)
 {
 crc=system(paste0("jacksum -a crc32 -E hex ",x),intern=T)
 return(gsub("\\s.+$","",crc[length(crc)]))
-#issue with container: jacksum output might contain an suprplus line with a weird warning, poisoning checksum. Oh yeah! :)
+#issue with container: jacksum output might contain an surplus line with a weird warning, poisoning checksum. Why not? Be my guest!
 }
-
-log_DB_add=function(x,db,string)
-{
-string=matrix(unlist(strsplit(string,"_#_")),nrow=1)
-string=data.frame(string,stringsAsFactors=F)
-colnames(string)=c("db.Name","info.File","info.MD5","db.CRC","db.Loc","db.Version","nProt","annotTaxDB","date","Format","is.Latest")
-if(file.exists(x)&&file.info(x)$size>0)
-{
-dbi.t=read.table(x,sep="\t",as.is=T,quote='"',header=T) #database, #folder, #fasta,#numprot #MD5, #jacksum
-dbi.t[dbi.t[,"db.Name"]==db,"is.Latest"]="no"
-dbi.new=rbind(dbi.t,string)
-}else
-{dbi.new=string
-}
-write.table(dbi.new,x,quote=T,row.names=F,col.names=T,sep="\t")
-}
-
-##########################
-
-
-##AUX functions#######
 create.dir=function(x){
-#place the system call in a function to enable error checking
+#folder creation with error checking
 dir.create(x)
+return(dir.exists(x))
 }
 
 user.input = function(prompt) {
@@ -134,19 +96,40 @@ user.input = function(prompt) {
     return(readLines("stdin", n=1))
   }
 }
-#####################################################
-#MAIN SCRIPT START HERE, with Initial error checking#
-#####################################################
 
-startdir=getwd()
-time_start=Sys.time()
-logfilename=paste0("CS_DatabaseUpdater_",format(time_start,"%d%b_%Y_%H_%M"),".log")
-logfile=file(logfilename,open="a") 
 
-#detect num CPU
-numC_max=as.numeric(system("lscpu -b -p=Core,Socket | grep -v '^#' | sort -u | wc -l",intern=T)) #determine the number of physical cores in the system. Effect od hyperthreading is ignored! 
+if(is.null(opt[["userdir"]]))
+{
+stop("Please set your local database directory with -u or --userdir option!")
+}
 
-#CPU type, mmseqs binary
+
+info("Downloading database URL file")
+
+if(grepl("^http",opt[["info"]])){
+#default variable is kept: download "official" db register from GoogleDrive
+gs4_deauth()
+DBinfo=try(read_sheet(opt[["info"]]),silent=T)
+if(!"data.frame"%in%class(DBinfo))
+ {
+ byedie("Unable to download database URL file from Google Cloud.")
+ } 
+}else
+{
+#variable is set: local file is expected
+DBinfo=read.table(opt[["info"]],sep=",",as.is=T,row.name=1,header=T)
+}
+DBinfo=data.frame(DBinfo,stringsAsFactors=F)
+rownames(DBinfo)=DBinfo[,"DB_Name"]
+
+if((!grepl("^custom:.+:/.+$",opt[["dbname"]]))&& (!("ncbi_taxonomy"%in%rownames(DBinfo) && opt[["dbname"]]%in% rownames(DBinfo))))
+{
+byedie(paste0("Database \'",opt[["dbname"]],"\' is not recognized. Please consult the manual for possible fixes of this error!\n"))
+}
+
+
+reformat_DB=function(x)
+{
 cpu=grep("Flags:",system("lscpu",intern=T),value=T)
 if(grepl(" avx2 ",cpu)){
 mmseqs.bin="mmseqs_avx2"
@@ -155,83 +138,88 @@ mmseqs.bin="mmseqs_sse41"
 } else {
 mmseqs.bin="mmseqs_sse2"
 }
+x.s=unlist(strsplit(x,"/"))
+outfolder=paste(x.s[-length(x.s)],collapse="/")
+outfile=x.s[length(x.s)]
+outdb_name=gsub("\\.fasta$","",outfile)
+dir.create(paste0(outfolder,"/mmseqs"))
+mmseqs.cmd=paste0(mmseqs.bin," createdb ",x," ",paste0(outfolder,"/mmseqs/",outdb_name,".taxdb"))
+system(mmseqs.cmd)
 
-
-#set numCPU
-if(opt[["cpu"]]==0)
+if(!file.exists(paste0(outfolder,"/mmseqs/",outdb_name,".taxdb"))&& file.info(paste0(outfolder,"/mmseqs/",outdb_name,".taxdb"))$size>0)
 {
-opt[["cpu"]]=numC_max
-}else if(opt[["cpu"]]>numC_max){
-opt[["cpu"]]=numC_max
-}
-opt[["IO_cpu"]]=min(opt[["cpu"]],8)
-info(paste0("Using ",opt[["cpu"]]," CPUs for general tasks and ",opt[["IO_cpu"]]," CPUs for IO operations.\n"))
-
-
-opt[["dbname"]]=match.arg(opt[["dbname"]],c("ncbi_taxonomy","nr_prot","refseq_prot","uniprotKB","uniref100","swissprot","uniprotSP"))
-
-
-if(!("ncbi_taxonomy"%in%rownames(DBinfo) && opt[["dbname"]]%in% rownames(DBinfo)))
-{
-byedie(paste0("Data from info file \'",opt[["info"]],"\' is incomplete.\nSome required database URL is missing!\n"))
+byedie("MMSeqs database generation failed!\n")
 }
 
-if(is.null(opt[["userdir"]]))
-{
-stop("Please set your local database directory with -u or --userdir option!")
-}
-#Update checker and downloader functions
+dir.create(paste0(outfolder,"/diamond"))
+diamond.cmd=paste0("diamond makedb --in ",x," -d ",paste0(outfolder,"/diamond/",outdb_name,".taxdb"))
+system(diamond.cmd)
 
-chk_update=function(wd,sd,what,i)
+if(!file.exists(paste0(outfolder,"/diamond/",outdb_name,".taxdb.dmnd"))&& file.info(paste0(outfolder,"/diamond/",outdb_name,".taxdb.dmnd"))$size>0)
 {
-setwd(wd)
-timestamp=paste0("update_checker_",format(Sys.time(),"%Y%m%d%H%M"))
-dbi.f=paste0(opt[["userdir"]],"/db_inventory.txt")
-if(!file.exists(paste0("tmp/",timestamp))){dir.create(paste0("tmp/",timestamp))}
-
-if(!(file.exists(dbi.f)&&file.info(dbi.f)$size>0))
- {
- unlink(paste0("tmp/",timestamp),recursive=T)
- return(TRUE)
- }else
- {
- dbi.t=read.table(dbi.f,sep="\t",as.is=T,header=T,quote='"') 
- dbi.t=dbi.t[dbi.t[,"is.Latest"]=="yes",] #keep only latest versions
- rownames(dbi.t)=dbi.t[,"db.Name"]
- dbi.t=dbi.t[what,]
- }
-db_desc_URL=i[what,"DB_URL"]
-md5.download.cmd=paste0("wget --no-check-certificate ",db_desc_URL," -O tmp/",timestamp,"/",what,"_info.txt")
-system(md5.download.cmd)
-info.refmd5=substr(system(paste0("md5sum tmp/",timestamp,"/",what,"_info.txt"),intern=T),1,32)
-unlink(paste0("tmp/",timestamp),recursive=T)
-return(!(!is.na(dbi.t[what,"info.MD5"])&&(info.refmd5==dbi.t[what,"info.MD5"] && file.exists(dbi.t[,"db.Loc"]))))
-#TRUE returned means "update is needed"
-#cases: there is no local copy from required DB (is.na)
-#info file MD5 does not match local copy 
-#local db file is lost
+byedie("Diamond database generation failed!\n")
 }
 
-dl.ncbi_tax=function(wd=opt[["userdir"]],sd=startdir)
+return(c(paste0(outfolder,"/mmseqs/",outdb_name,".taxdb"),paste0(outfolder,"/diamond/",outdb_name,".taxdb.dmnd")))
+}
+
+count_TaxIDs=function(x)
 {
-setwd(wd)
-if(chk_update(wd=opt[["userdir"]],sd=workdir,what="ncbi_taxonomy",i=DBinfo))
+#calculate number of taxa in reference database
+x.s=unlist(strsplit(x,"/"))
+taxi=system(paste('grep ">" ',x,' | cut -f 1 -d " " | cut -f 2 -d :'),intern=T)
+workdir=paste(x.s[-length(x.s)],collapse="/")
+r=Rle(taxi)
+rundata=cbind(runValue(r),runLength(r))
+colnames(rundata)=c("TaxID","RunLength")
+rundata.s=split(rundata[,"RunLength"],rundata[,"TaxID"])
+rundata.s2=sapply(rundata.s,function(x) return(sum(as.numeric(x))))
+rundata.s3=rundata.s2[sapply(rundata.s2,function(x) x>=100)] #remove taxon IDs with fewer than 100 proteins
+taxfile=list.files(workdir,pattern="rankedtaxidlineage.RDS",full.names=T,recursive=T)
+tax=readRDS(taxfile)
+summary(names(rundata.s3)%in%rownames(tax))
+s=cbind(rundata.s3,names(rundata.s3))
+colnames(s)=c("NumProts","TaxonID")
+s=s[s[,"TaxonID"]%in%rownames(tax),]
+rownames(s)=s[,"TaxonID"]
+tax.sel=tax[rownames(tax)%in%rownames(s),]
+tax.sel=tax.sel[rownames(s),]
+all(rownames(tax.sel)==rownames(s))
+taxtable=cbind(tax.sel,s)
+taxtable=data.frame(taxtable,stringsAsFactors=F)
+for(colname in c("family","order","class","phylum","kingdom","superkingdom"))
+{taxtable[,colname]=paste0("t",taxtable[,colname])
+}
+saveRDS(taxtable,paste0(workdir,"/",x.s[[2]],"_",x.s[[1]],"_taxID_DBcount.RDS"))
+return(0)
+}
+
+
+#####################################################
+#Database-specific downloader scripts are here
+#####################################################
+
+update_is_needed=function(db,crc,udir)
 {
+ifile=list.files(udir,pattern="dbinfo",recursive=T,full.name=T)
+ifile=grep(db,ifile,value=T)
+ifile=grep(crc,ifile,value=T)
+if(length(ifile)==0)
+{
+return(TRUE)
+}else{
+return(FALSE)
+}
+}
+
+dl.ncbi_tax=function(x)
+{
+x.s=unlist(strsplit(x,"/"))
+workdir=paste(x.s[-length(x.s)],collapse="/")
+outdir=(paste0(workdir,"/ncbi_tax"))
+create.dir(outdir)
 cat("Fetching NCBI taxonomy database.\n")
 timestamp=paste0("ncbi_taxonomy","_",format(Sys.time(),"%Y%m%d%H%M"))
-if(!dir.exists(opt[["userdir"]]))
-{
-dir.create(opt[["userdir"]])
-}
-if(!dir.exists(paste0(opt[["userdir"]],"/tmp")))
-{
-dir.create(paste0(opt[["userdir"]],"/tmp"))
-}
-if(!dir.exists(paste0(opt[["userdir"]],"/ncbi_taxonomy")))
-{
-dir.create(paste0(opt[["userdir"]],"/ncbi_taxonomy"))
-}
-
 dir.create(paste0("tmp/",timestamp))
 md5.download.cmd=paste0("wget --no-check-certificate ",DBinfo["ncbi_taxonomy","DB_URL"]," -O tmp/",timestamp,"/new_taxdump.tar.gz.md5")
 db.download.cmd=gsub("new_taxdump.tar.gz.md5","new_taxdump.tar.gz",md5.download.cmd)
@@ -243,26 +231,69 @@ info.md5=substr(system(paste0("md5sum tmp/",timestamp,"/new_taxdump.tar.gz.md5")
 if(taxdump.refmd5!=taxdump.md5)
 {
 byedie(paste0("NCBI taxonomy database failed to download!\nDownload from NCBI failed!"))
-
 }else 
 {
-system(paste0("tar -xvf tmp/",timestamp,"/new_taxdump.tar.gz -C tmp/",timestamp," rankedlineage.dmp"))
+system(paste0("tar -xvf tmp/",timestamp,"/new_taxdump.tar.gz -C tmp/",timestamp))
 taxdump.crc32=jacksum(paste0("tmp/",timestamp,"/rankedlineage.dmp"))
-dir.create(paste0("ncbi_taxonomy/",taxdump.crc32))
-file.rename(paste0("tmp/",timestamp,"/rankedlineage.dmp"),paste0("ncbi_taxonomy/",taxdump.crc32,"/",taxdump.crc32,"_rankedlineage.dmp"))
-unlink(paste0("tmp/",timestamp),recursive=T)
-}
-logtext=paste("ncbi_taxonomy",paste0("ncbi_taxonomy/",taxdump.crc32,"/",taxdump.crc32,"_new_taxdump.tar.gz.md5"),info.md5,taxdump.crc32,paste0("ncbi_taxonomy/",taxdump.crc32,"/",taxdump.crc32,"_rankedlineage.dmp"),taxdump.crc32,"NA",taxdump.crc32,Sys.time(),"ncbidump","yes",sep="_#_")
-log_DB_add(paste0(opt[["userdir"]],"/db_inventory.txt"),"ncbi_taxonomy",logtext)
-setwd(sd)
-return(paste0("ncbi_taxonomy/",taxdump.crc32,"/",taxdump.crc32,"_rankedlineage.dmp"))
-}else
+dir.create(paste0(outdir,"/",taxdump.crc32))
+file.rename(paste0("tmp/",timestamp,"/rankedlineage.dmp"),paste0(outdir,"/",taxdump.crc32,"/",taxdump.crc32,"_rankedlineage.dmp"))
+file.rename(paste0("tmp/",timestamp,"/nodes.dmp"),paste0(outdir,"/",taxdump.crc32,"/",taxdump.crc32,"_nodes.dmp"))
+file.rename(paste0("tmp/",timestamp,"/taxidlineage.dmp"),paste0(outdir,"/",taxdump.crc32,"/",taxdump.crc32,"_taxidlineage.dmp"))
+info(paste0("Generating ranked taxID file from NCBI database. This might take a while."))
+nodedata=readLines(paste0(outdir,"/",taxdump.crc32,"/",taxdump.crc32,"_nodes.dmp"))
+lineage=readLines(paste0(outdir,"/",taxdump.crc32,"/",taxdump.crc32,"_taxidlineage.dmp"))
+
+nodedata.list=mclapply(nodedata,function(x) unlist(strsplit(x,"\t|\t",fixed=T)),mc.cores=opt[["cpu"]])
+nodedata.ranks=sapply(nodedata.list,function(x) return(x[3]))
+ranks.sel=tolower(c("Genus","Family","Order","Class","Phylum","Kingdom","Superkingdom"))
+nodedata.list.sel=nodedata.list[nodedata.ranks%in%ranks.sel] 
+node_whitelist=lapply(nodedata.list.sel,function(x) x[c(1,3)]) 
+node_whitelist=do.call(rbind,node_whitelist)
+colnames(node_whitelist)=c("TaxID","Rank")
+node_whitelist.s=split(node_whitelist[,"TaxID"],node_whitelist[,"Rank"])
+
+lineage.list=mclapply(lineage,function(x) unlist(strsplit(x,"\t|\t",fixed=T)),mc.cores=opt[["cpu"]])
+names(lineage.list)=sapply(lineage.list,function(x) paste0("t",x[1]))
+lineage.list=sapply(lineage.list,function(x) return(gsub("\t|","",x[2],fixed=T)))
+
+lineage.LL=mclapply(lineage.list,function(x) unlist(strsplit(x," ")),mc.cores=opt[["cpu"]])
+names(lineage.LL)=paste0(names(lineage.LL),":")
+lineage.ul=unlist(lineage.LL)
+
+for(rank in ranks.sel)
 {
-dbi.t=read.table(paste0(opt[["userdir"]],"/db_inventory.txt"),sep="\t",as.is=T,header=T,quote='"') 
- dbi.t=dbi.t[dbi.t[,"is.Latest"]=="yes",] #keep only latest versions
- rownames(dbi.t)=dbi.t[,"db.Name"]
- setwd(sd)
- return(dbi.t["ncbi_taxonomy","db.Loc"])
+lineage.ul[lineage.ul%in%node_whitelist.s[[rank]]]=paste0(rank,":",lineage.ul[lineage.ul%in%node_whitelist.s[[rank]]])
+}
+
+lineage.ul=grep(":",lineage.ul,value=T)
+names(lineage.ul)=gsub(":.*","",names(lineage.ul))
+lineage.s=split(lineage.ul,names(lineage.ul))
+
+extend=function(x)
+{
+names(x)=gsub(":.+$","",x)
+miss_tax=setdiff(ranks.sel,names(x))
+res=unlist(lapply(miss_tax,function(x) {a="";names(a)=x;return(a)}))
+x=c(res,x)
+x=x[tolower(c("Genus","Family","Order","Class","Phylum","Kingdom","Superkingdom"))]
+x=gsub("^.+:","",x)
+return(x)
+}
+
+lineage.es=mclapply(lineage.s,FUN=extend,mc.cores=opt[["cpu"]])
+lineage.es=do.call(rbind,lineage.es)
+
+lineage.es[lineage.es[,"genus"]=="","genus"]=32644
+lineage.es[lineage.es[,"family"]=="","family"]=paste0("vf_",lineage.es[lineage.es[,"family"]=="","genus"])
+lineage.es[lineage.es[,"order"]=="","order"]=paste0("vo_",lineage.es[lineage.es[,"order"]=="","family"])
+lineage.es[lineage.es[,"class"]=="","class"]=paste0("vc_",lineage.es[lineage.es[,"class"]=="","order"])
+lineage.es[lineage.es[,"phylum"]=="","phylum"]=paste0("vp_",lineage.es[lineage.es[,"phylum"]=="","class"])
+lineage.es[lineage.es[,"kingdom"]=="","kingdom"]=paste0("vk_",lineage.es[lineage.es[,"kingdom"]=="","phylum"])
+lineage.es=lineage.es[lineage.es[,"superkingdom"]!="",]
+lineagefile=paste0(outdir,"/",taxdump.crc32,"/",taxdump.crc32,"_rankedtaxidlineage.RDS")
+saveRDS(lineage.es,lineagefile)
+unlink(paste0("tmp/",timestamp),recursive=T)
+return(taxdump.crc32)
 }
 }
 
@@ -271,30 +302,26 @@ dl.ncbi_blastdb=function(wd=opt[["userdir"]],sd=startdir,what,i=DBinfo)
 setwd(wd)
 if(!dir.exists(what))
 {
-dir.create(what)
+create.dir(what)
 }
-if(chk_update(wd=opt[["userdir"]],sd=startdir,what="ncbi_taxonomy",i=DBinfo)){
-dl.ncbi_tax(wd=opt[["userdir"]],sd=startdir)
-}
-dbi.t=read.table(paste0(opt[["userdir"]],"/db_inventory.txt"),sep="\t",as.is=T,header=T,quote='"') 
-dbi.t=dbi.t[dbi.t[,"is.Latest"]=="yes",] #keep only latest versions
-rownames(dbi.t)=dbi.t[,"db.Name"]
-taxdump.crc32=dbi.t["ncbi_taxonomy","db.Version"]
 info(paste0("Fetching BLAST database \'",what,"\' from NCBI.\n"))
 timestamp=paste0(what,"_",format(Sys.time(),"%Y%m%d%H%M"))
-dir.create(paste0("tmp/",timestamp))
+create.dir(paste0("tmp/",timestamp))
 info_outfile=gsub("^.+/","",i[what,"DB_URL"])
 info.download.cmd=paste0("wget --no-check-certificate  ",i[what,"DB_URL"]," -O tmp/",timestamp,"/",info_outfile)
 system(info.download.cmd)
 info.md5=substr(system(paste0("md5sum tmp/",timestamp,"/",info_outfile),intern=T) ,1,32)
+info.crc=jacksum(paste0("tmp/",timestamp,"/",info_outfile))
+
+if(update_is_needed(db=what,crc=info.crc,udir=opt[["userdir"]]))
+{
 info.data=fromJSON(file=paste0("tmp/",timestamp,"/",info_outfile))
 dl.chunks=matrix(ncol=4,nrow=length(info.data$files))
-dl.chunks[,1]=paste0("wget --no-check-certificate ",gsub(paste0(info_outfile,"$"),"",i[what,"DB_URL"]))
+dl.chunks[,1]=paste0("wget -c --no-check-certificate ",gsub(paste0(info_outfile,"$"),"",i[what,"DB_URL"]))
 dl.chunks[,2]=gsub("^.+/","",info.data$files)
 dl.chunks[,3]=paste0(" -O tmp/",timestamp,"/")
 dl.chunks[,4]=gsub("^.+/","",info.data$files)
 dl.commands=apply(dl.chunks,1,function(x) paste(x,collapse=""))
-writeLines(dl.commands,paste0(timestamp,".download.sh"))
 dl.md5.commands=gsub("\\.tar\\.gz",".tar.gz.md5",dl.commands)
 dl.check.md5=lapply(dl.md5.commands,function(x) return(system(x)))
 
@@ -323,21 +350,11 @@ byedie(paste0("MD5 checksum mismatch, database download error with \'",what,"\'!
 gzf=gzf[length(gzf):1]
 lapply(gzf,function(x) system(paste0("tar -xvf ",x," -C tmp/",timestamp)))
 setwd(paste0("tmp/",timestamp))
-system(paste0('blastdbcmd -dbtype prot -db ',what,' -entry all -outfmt ">%a\t%T\t%t\t%s" >',timestamp,"_dump.fasta")) #lookout! \t is recognized while \n is NOT.
+system(paste0('blastdbcmd -dbtype prot -db ',what,' -entry all -outfmt ">%a\t%T\t%t\t%s" >',timestamp,"_dump.fasta")) 
+#watch out! \t is recognized while \n is NOT.
+
 num_prot_out=system(paste0('grep -c ">" ',timestamp,"_dump.fasta"),intern=T)
 setwd(opt[["userdir"]])
-tax=readLines(dbi.t["ncbi_taxonomy","db.Loc"])
-tax=gsub("\\t\\|$","",tax)
-tax.last=gsub("^.+\\t","",tax)
-tax.simple=tax.last[tax.last%in%c("Archaea","Bacteria","Viruses")]
-names(tax.simple)=paste0("t",gsub("\\t.+$","",tax[tax.last%in%c("Archaea","Bacteria","Viruses")]))
-tax.euk=tax[tax.last=="Eukaryota"]
-tax.euk2=mclapply(tax.euk,function(x) unlist(strsplit(x,"\\t\\|\\t")),mc.cores=opt[["cpu"]])
-tax.euk3=sapply(tax.euk2,function(x) x[9])
-tax.euk3[tax.euk3==""]="Other_eukaryote"
-names(tax.euk3)=paste0("t",gsub("\\t.+$","",tax.euk))
-taxDB=c(tax.simple,tax.euk3)
-taxDB=taxDB[order(as.numeric(gsub("^t","",names(taxDB))))]
 fasta_con=file(paste0("tmp/",timestamp,"/",timestamp,"_dump.fasta"))
 open(fasta_con,open="r")
 while(TRUE)
@@ -352,9 +369,7 @@ break
 chunk=matrix(chunk,byrow=T,ncol=4)
 nprot=nrow(chunk)
 chunk[,2]=paste0("t",chunk[,2])
-chunk=cbind(chunk,taxDB[chunk[,2]])
-chunk[is.na(chunk[,5]),5]="TaxMissingNCBI"  
-new.header=paste0(chunk[,1],":",chunk[,2],":",chunk[,5]," ",chunk[,3])
+new.header=paste0(chunk[,1],":",chunk[,2]," ",chunk[,3])
 new.fasta=c(rbind(new.header,chunk[,4]))
 write.table(new.fasta,paste0("tmp/",timestamp,"/",timestamp,"_tax.fasta"),append=T,quote=F,row.names=F,col.names=F)
 stop=Sys.time()
@@ -364,30 +379,27 @@ print(stop-start)
 }
 close(fasta_con)
 fasta.crc=jacksum(paste0("tmp/",timestamp,"/",timestamp,"_tax.fasta"))
-dir.create(paste0(what,"/",fasta.crc))
-fa_outfile=paste0(what,"/",fasta.crc,"/",fasta.crc,"_",what,"_tax.fasta")
+dir.create(paste0(what,"/",info.crc))
+dir.create(paste0(what,"/",info.crc,"/db_info"))
+fa_outfile=paste0(what,"/",info.crc,"/",fasta.crc,"_",what,"_tax.fasta")
 file.rename(paste0("tmp/",timestamp,"/",timestamp,"_tax.fasta"),fa_outfile)
-json_outfile=paste0(what,"/",fasta.crc,"/",info_outfile)
+numheaders=system(paste0('grep -c ">" ',fa_outfile),intern=T)
+info(paste0("Written ",numheaders," sequences with TaxonID."))
+timetext=format(Sys.time(), "%Y-%m-%d_%H:%M:%S")
+db_loc=reformat_DB(fa_outfile)
+tax_CRC=dl.ncbi_tax(fa_outfile)
+count_TaxIDs(fa_outfile)
+json_outfile=paste0(what,"/",info.crc,"/db_info/",info.crc,"_",info_outfile)
 file.rename(paste0("tmp/",timestamp,"/",info_outfile),json_outfile)
-if(grepl("M",toupper(opt[["format"]])))
-{
-dir.create(paste0(what,"/",fasta.crc,"/mmseqs"))
-mmseqs.cmd=paste0(mmseqs.bin," createdb ",fa_outfile," ",paste0(what,"/",fasta.crc,"/mmseqs/",fasta.crc,"_",what,"_tax.db"))
-system(mmseqs.cmd)
-logtext=paste(what,json_outfile,info.md5,fasta.crc,paste0(what,"/",fasta.crc,"/mmseqs/",fasta.crc,"_",what,"_tax.db"),fasta.crc,num_prot_out,taxdump.crc32,Sys.time(),"mmseqs","yes",sep="_#_")
-#unlist(strsplit(logtext,"_#_"))
-
-log_DB_add(paste0(opt[["userdir"]],"/db_inventory.txt"),what,logtext)
-}
-if(grepl("D",toupper(opt[["format"]])))
-{
-dir.create(paste0(what,"/",fasta.crc,"/diamond"))
-diamond.cmd=paste0("diamond makedb --in ",fa_outfile," -d",paste0(what,"/",fasta.crc,"/diamond/",fasta.crc,"_",what,"_tax.db"))
-system(diamond.cmd)
-logtext=paste(what,json_outfile,info.md5,fasta.crc,paste0(what,"/",fasta.crc,"/diamond/",fasta.crc,"_",what,"_tax.db"),fasta.crc,num_prot_out,taxdump.crc32,Sys.time(),"mmseqs","yes",sep="_#_")
-log_DB_add(paste0(opt[["userdir"]],"/db_inventory.txt"),what,logtext)
-}
 unlink(paste0("tmp/",timestamp),recursive=T)
+db_summary=paste0(c("Name: ","Source: ","NumProts: ","DB_CRC: ","Tax_CRC: ","MMSeqs_DB: ","Diamond_DB: ","Creation_Date: "),c(what,"NCBI",numheaders,fasta.crc,tax_CRC,db_loc,timetext))
+writeLines(db_summary,paste0(what,"/",info.crc,"/db_info/",what,"_",info.crc,".dbinfo"))
+unlink(paste0("tmp/",timestamp),recursive=T)
+system(paste("gzip ",fa_outfile))
+}else
+{
+info(paste0("Latest version of database ",'"',what,'"'," is already installed."))
+}
 }
 
 fetch.uniprot=function(x)
@@ -406,18 +418,18 @@ dl.uniprot=function(wd=opt[["userdir"]],sd=startdir,i=DBinfo,what)
 setwd(wd)
 if(!dir.exists(what))
 {
-dir.create(what)
+create.dir(what)
 }
-taxDB.file=dl.ncbi_tax(wd=opt[["userdir"]],sd=startdir)
-setwd(wd)
-taxdump.crc32=jacksum(taxDB.file)
-info(paste0("Fetching database \'",what,"\' from Expasy.\n"))
+info(paste0("Fetching database \'",what,"\' from Expasy."))
 timestamp=paste0(what,"_",format(Sys.time(),"%Y%m%d%H%M"))
-dir.create(paste0("tmp/",timestamp))
+create.dir(paste0("tmp/",timestamp))
 info_outfile=gsub("^.+/","",i[what,"DB_URL"])
 info.download.cmd=paste0("wget --no-check-certificate  ",i[what,"DB_URL"]," -O tmp/",timestamp,"/",info_outfile)
 system(info.download.cmd)
 info.md5=substr(system(paste0("md5sum tmp/",timestamp,"/",info_outfile),intern=T) ,1,32)
+info.crc=jacksum(paste0("tmp/",timestamp,"/",info_outfile))
+if(update_is_needed(db=what,crc=info.crc,udir=opt[["userdir"]]))
+{
 info.data=(xmlParse(paste0("tmp/",timestamp,"/",info_outfile)))
 info.data=do.call(paste, as.list(capture.output(info.data)))
 if(what=="uniref100")
@@ -460,18 +472,6 @@ if(!gunzip.res==0)
 {
 byedie(paste0("Database decompression failed for \'",what,"'\"."))
 }
-tax=readLines(taxDB.file)
-tax=gsub("\\t\\|$","",tax)
-tax.last=gsub("^.+\\t","",tax)
-tax.simple=tax.last[tax.last%in%c("Archaea","Bacteria","Viruses")]
-names(tax.simple)=paste0("t",gsub("\\t.+$","",tax[tax.last%in%c("Archaea","Bacteria","Viruses")]))
-tax.euk=tax[tax.last=="Eukaryota"]
-tax.euk2=mclapply(tax.euk,function(x) unlist(strsplit(x,"\\t\\|\\t")),mc.cores=opt[["cpu"]])
-tax.euk3=sapply(tax.euk2,function(x) x[9])
-tax.euk3[tax.euk3==""]="Other_eukaryote"
-names(tax.euk3)=paste0("t",gsub("\\t.+$","",tax.euk))
-taxDB=c(tax.simple,tax.euk3)
-taxDB=taxDB[order(as.numeric(gsub("^t","",names(taxDB))))]
 uni_con=file(out.fasta.file)
 open(uni_con,open="r")
 while(TRUE)
@@ -486,14 +486,12 @@ break
 fchar=substr(chunk,1,1)
 headers=fchar==">"
 nprot=sum(headers)
-chunk.taxid=gsub("^.+TaxID=","t",chunk[headers])
+chunk.taxid=gsub("^.+( TaxID=| OX=)","t",chunk[headers])
 chunk.taxid[chunk.taxid=="tN/A"]="t32644"
 chunk.taxid=gsub(" .+","",chunk.taxid)
 chunk.id=gsub(" .+$","",chunk[headers])
 chunk.comment=gsub("^\\S+ ","",chunk[headers])
-chunk.taxtext=taxDB[chunk.taxid]
-chunk.taxtext[is.na(chunk.taxtext)]="TaxMissingNCBI"
-newheaders=paste0(chunk.id,":",chunk.taxid,":",chunk.taxtext," ",chunk.comment)
+newheaders=paste0(chunk.id,":",chunk.taxid," ",chunk.comment)
 chunk[headers]=newheaders
 write.table(chunk,paste0("tmp/",timestamp,"/",what,"_",info.data.decode[[1]][["version"]],"_tax.tmp"),append=T,quote=F,row.names=F,col.names=F)
 stop=Sys.time()
@@ -504,45 +502,139 @@ print(stop-start)
 close(uni_con)
 fasta.crc=jacksum(paste0("tmp/",timestamp,"/",what,"_",info.data.decode[[1]][["version"]],"_tax.tmp"))
 fasta.crc=gsub("\\s.+$","",fasta.crc)
-dir.create(paste0(what,"/",fasta.crc))
-out.taxfasta=paste0(what,"/",fasta.crc,"/",fasta.crc,"_",what,"_",info.data.decode[[1]][["version"]],"_tax.fasta")
-num_prot_out=system(paste0('grep -c ">" ',out.taxfasta),intern=T)
-file.rename(paste0("tmp/",timestamp,"/",what,"_",info.data.decode[[1]][["version"]],"_tax.tmp"),out.taxfasta)
+dir.create(paste0(what,"/",info.crc))
+dir.create(paste0(what,"/",info.crc,"/db_info"))
+fa_outfile=paste0(what,"/",info.crc,"/",fasta.crc,"_",what,"_",info.data.decode[[1]][["version"]],"_tax.fasta")
+file.rename(paste0("tmp/",timestamp,"/",what,"_",info.data.decode[[1]][["version"]],"_tax.tmp"),fa_outfile)
+numheaders=system(paste0('grep -c ">" ',fa_outfile),intern=T)
+info(paste0("Written ",numheaders," sequences with TaxonID."))
+timetext=format(Sys.time(), "%Y-%m-%d_%H:%M:%S")
+db_loc=reformat_DB(fa_outfile)
+tax_CRC=dl.ncbi_tax(fa_outfile)
+count_TaxIDs(fa_outfile)
+json_outfile=paste0(what,"/",info.crc,"/db_info/",info.crc,"_",info_outfile)
+file.rename(paste0("tmp/",timestamp,"/",info_outfile),json_outfile)
+
+db_summary=paste0(c("Name: ","Source: ","NumProts: ","DB_CRC: ","Tax_CRC: ","MMSeqs_DB: ","Diamond_DB: ","Creation_Date: "),c(what,"Uniprot",numheaders,fasta.crc,tax_CRC,db_loc,timetext))
+writeLines(db_summary,paste0(what,"/",info.crc,"/db_info/",what,"_",info.crc,".dbinfo"))
 unlink(paste0("tmp/",timestamp),recursive=T)
-if(grepl("M",toupper(opt[["format"]])))
+system(paste("gzip ",fa_outfile))
+}else
 {
-dir.create(paste0(what,"/",fasta.crc,"/mmseqs"))
-mmseqs.cmd=paste0(mmseqs.bin," createdb ",out.taxfasta," ",paste0(what,"/",fasta.crc,"/mmseqs/",fasta.crc,"_",what,"_",info.data.decode[[1]][["version"]],"_tax.db"))
-system(mmseqs.cmd)
-logtext=paste(what,info_outfile,info.md5,fasta.crc,paste0(what,"/",fasta.crc,"/mmseqs/",fasta.crc,"_",what,"_",info.data.decode[[1]][["version"]],"_tax.db"),fasta.crc,num_prot_out,taxdump.crc32,Sys.time(),"mmseqs","yes",sep="_#_")
-log_DB_add(paste0(opt[["userdir"]],"/db_inventory.txt"),what,logtext)
+info(paste0("Latest version of database ",'"',what,'"'," is already installed."))
 }
-if(grepl("D",toupper(opt[["format"]])))
+}
+
+import_custom_set=function(x)
 {
-dir.create(paste0(what,"/",fasta.crc,"/diamond"))
-diamond.cmd=paste0("diamond makedb --in ",out.taxfasta," -d ",paste0(what,"/",fasta.crc,"/diamond/",fasta.crc,"_",what,"_",info.data.decode[[1]][["version"]],"_tax.db"))
-system(diamond.cmd)
-logtext=paste(what,info_outfile,info.md5,fasta.crc,paste0(what,"/",fasta.crc,"/diamond/",fasta.crc,"_",what,"_tax.db"),fasta.crc,num_prot_out,taxdump.crc32,Sys.time(),"mmseqs","yes",sep="_#_")
-log_DB_add(paste0(opt[["userdir"]],"/db_inventory.txt"),what,logtext)
+x.s=unlist(strsplit(x,":"))
+fasta.file=list.files(pattern="fasta$",x.s[[3]],full.name=T)
+taxid.file=gsub("\\.fasta$",".tax",fasta.file)
+if(!file.exists(fasta.file)&&file.exists(taxid.file))
+{
+byedie(paste0("Could not find .fasta and .TaxID file in custom datatabase import folder ",'"',x.s[[3]],'".'))
+}
+numprot=system(paste0('grep -c ">" ',fasta.file),intern=T)
+numtax=system(paste0('egrep -c -v "^$" ',taxid.file),intern=T)
+if(!numprot==numtax)
+{
+byedie("Number of proteins and number of taxonIDs do not match. Please check input files!\n")
+}
+fasta_con=file(fasta.file)
+tax_con=file(taxid.file)
+open(fasta_con,open="r")
+open(tax_con,open="r")
+timestamp=paste0(x.s[[2]],"_",format(Sys.time(),"%Y%m%d%H%M"))
+while(TRUE)
+{
+start=Sys.time()
+chunk=scan(fasta_con,n=2000000,what="char",sep="\t",quote="") 
+if(length(chunk)==0)
+{
+break
+}else
+{
+fchar=substr(chunk,1,1)
+headers=fchar==">"
+nprot=sum(headers)
+taxchunk=scan(tax_con,n=nprot,what="char",sep="\t",quote="") 
+taxchunk=grep("^$",taxchunk,invert=T,value=T)
+
+old_names=chunk[headers]
+taxchunk=gsub("NA","t32644",taxchunk)
+old_names.t=do.call(rbind,lapply(old_names,function(x) {d=unlist(strsplit(x," "));d_rest=paste(d[-1],collapse=" ");return(c(d[1],d_rest))}))
+new_names=paste0(old_names.t[,1],":t",taxchunk," ",old_names.t[,2])
+chunk[headers]=new_names
+if(!dir.exists(paste0("tmp/",timestamp)))
+{
+create.dir(paste0("tmp/",timestamp))
+}
+write.table(chunk,paste0("tmp/",timestamp,"/",timestamp,"_customDB.fasta"),append=T,quote=F,row.names=F,col.names=F)
+stop=Sys.time()
+cat (paste0("Processed ",nprot," proteins.\n"))
+print(stop-start)
 }
 }
+close(fasta_con)
+close(tax_con)
+fasta.crc=jacksum(paste0("tmp/",timestamp,"/",timestamp,"_customDB.fasta"))
+
+if(!dir.exists("custom"))
+{
+create.dir("custom")
+}
+
+dir.create(paste0("custom","/",x.s[2],"_",fasta.crc))
+dir.create(paste0("custom","/",x.s[2],"_",fasta.crc,"/db_info"))
+fa_outfile=paste0("custom","/",x.s[2],"_",fasta.crc,"/",x.s[2],"_",fasta.crc,"_tax.fasta")
+file.rename(paste0("tmp/",timestamp,"/",timestamp,"_customDB.fasta"),fa_outfile)
+numheaders=system(paste0('grep -c ">" ',fa_outfile),intern=T)
+info(paste0("Written ",numheaders," sequences with TaxonID."))
+timetext=format(Sys.time(), "%Y-%m-%d_%H:%M:%S")
+db_loc=reformat_DB(fa_outfile)
+tax_CRC=dl.ncbi_tax(fa_outfile)
+count_TaxIDs(fa_outfile)
+db_summary=paste0(c("Name: ","Source: ","NumProts: ","DB_CRC: ","Tax_CRC: ","MMSeqs_DB: ","Diamond_DB: ","Creation_Date: "),c(x.s[[2]],"direct_user_import",numheaders,fasta.crc,tax_CRC,db_loc,timetext))
+writeLines(db_summary,paste0("custom","/",x.s[2],"_",fasta.crc,"/db_info/",x.s[2],"_",fasta.crc,".dbinfo"))
+unlink(paste0("tmp/",timestamp),recursive=T)
+system(paste("gzip ",fa_outfile))
+
+}
+
+#MAIN SCRIPT STARTS HERE
+
+
+
+#detect num CPU, ignoring HyperThreading
+numC_max=as.numeric(system("lscpu -b -p=Core,Socket | grep -v '^#' | sort -u | wc -l",intern=T)) 
+#set numCPU
+if(opt[["cpu"]]==0)
+{
+opt[["cpu"]]=numC_max
+}else if(opt[["cpu"]]>numC_max){
+opt[["cpu"]]=numC_max
+}
+opt[["IO_cpu"]]=min(opt[["cpu"]],8)
+info(paste0("Using ",opt[["cpu"]]," CPUs for general tasks and ",opt[["IO_cpu"]]," CPUs for IO operations."))
+
 
 ########################################################################################
 #check if the user database directory exists, is writeable and has at least 500 GB free space
 ########################################################################################
 if(!dir.exists(opt[["userdir"]]))
 {
-info(paste0("Your local database repository folder \'",opt[["userdir"]],"\' does not exist!\n"))
-ans=user.input("Do you want to create it now and proceed with a clean database install? (yes/no)\n")
- if(ans=="yes")
- {
- dir.status=try(create.dir(opt[["userdir"]]))
-  if(!dir.status)
-  {byedie(paste0("Local database repository folder \'",opt[["userdir"]],"\' could not be created.\n Please check folder path and permissions!\n"))}else{}
- }else
- {
- byedie(paste0('Download of \"',opt[["dbname"]],'\"'," database was cancelled by user.\n"))
- }
+	if(!create.dir(opt[["userdir"]]))
+		{
+		byedie(paste0("Directory ",opt[["userdir"]],",could not be created. Please check available space and user premissions.\n"))
+		}
+}
+setwd(opt[["userdir"]])
+if(!dir.exists("tmp"))
+{
+	if(!create.dir("tmp"))
+		{
+		byedie(paste0("Tmp directory could not be created. Please check available space and user premissions.\n"))
+		}
 }
 
 dbd.df=system(paste0("df -P ",opt[["userdir"]]," -B 1G ",opt[["userdir"]]),intern=T)[2]
@@ -550,32 +642,22 @@ dbd.dfv=unlist(strsplit(dbd.df," +"))
 dbd.free=as.numeric(dbd.dfv[[4]])
 if(!dbd.free>=500)
 {
-biedye(paste0("There seems to be less than 500 GHB free space in folder ",opt[["userdir"]],"!\n"))
+byedie(paste0("There seems to be less than 500 GB free space in folder ",opt[["userdir"]],"!\n"))
 }
-#jump to user directory
-setwd(opt[["userdir"]])
 
-if(opt[["dbname"]]%in%c("nr_prot","refseq_prot","swissprot"))
+
+if(opt[["dbname"]]%in%c("nr","refseq","swissprot"))
 {
 dl.ncbi_blastdb(what=opt[["dbname"]])
 }else if(opt[["dbname"]]%in%c("uniref100","uniprotKB","uniprotSP")){
 dl.uniprot(what=opt[["dbname"]])
 }else if(opt[["dbname"]]=="ncbi_taxonomy"){
 dl.ncbi_tax()
+}else if(grepl("^custom:.+:/",opt[["dbname"]],ignore.case=T))
+{
+import_custom_set(opt[["dbname"]])
 }else
 {
-byedie(paste0("Database \'",opt[["dbname"]],"\' is not recognized!"))
+byedie(paste0("Database \'",opt[["dbname"]],"\' is not recognized!\nPlease consult the user manual for accepted database names!"))
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
+info("Database update finished.")
