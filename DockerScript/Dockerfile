@@ -1,9 +1,8 @@
 #docker build ./ --tag h836472/contscout:latest
 FROM ubuntu:latest
 WORKDIR /data
-RUN \
-    apt-get update        && \
-    apt-get install --yes    \
+RUN apt-get update 
+RUN apt-get install --yes    \
         build-essential      \
         gfortran             \
         python3-dev          \
