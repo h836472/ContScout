@@ -10,7 +10,7 @@ RUN apt-get install --yes    \
     apt-get clean all
 RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata &&\
 apt-get install --yes libcurl4-openssl-dev libxml2-dev libssl-dev libmagick++-dev libcairo2-dev curl \
-liblzma-dev libblas-dev aptitude libreadline-dev default-jdk cmake ncbi-blast+ locales libharfbuzz-dev libfribidi-dev
+liblzma-dev libblas-dev aptitude libreadline-dev openjdk-8-jdk cmake ncbi-blast+ locales libharfbuzz-dev libfribidi-dev
 RUN ncpu=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}') &&\
 curl -O https://cran.rstudio.com/src/base/R-4/R-4.1.2.tar.gz &&\
 tar -xzvf R-4.1.2.tar.gz &&\
