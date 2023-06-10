@@ -193,7 +193,7 @@ byedie("Please specify an input directory that contains the protein sequence and
 
 if (!dir.exists((opt[["inputdir"]])))
 {
-byedie("Could not open input directory at ",'"",opt[["inputdir"]],'"'!\n")
+byedie("Could not open input directory at ",'"",opt[["inputdir"]],'"',"!\n")
 }
 
 setwd(opt[["inputdir"]])
