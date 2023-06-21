@@ -21,7 +21,7 @@ option_list = list(
   make_option(c("-u", "--userdir"), type="character", default=NULL, 
               help="Path to local database repository folder", metavar="userdir"),
   make_option(c("-i", "--info"), type="character", default="https://docs.google.com/spreadsheets/d/1_FPaAnyHVUhHzV8gwic2X3RKaN9vSl9jcTN_50T7X24", 
-              help="Path to local database repository folder", metavar="userdir"),
+              help="Path to local database repository folder", metavar="info"),
   make_option(c("-l", "--list_databases"), action="store_true", default=FALSE,
               help="List pre-formatted databases stored in the local database repository."),
   make_option(c("-c", "--cpu"), type="character", default="all", 
@@ -44,7 +44,7 @@ opt = parse_args(opt_parser);
 ###################################
 #generic logging and info functions
 ###################################
-byedie=function(x,log=TRUE,sure_q=FALSE){
+byedie=function(x,log=TRUE,sure_q=TRUE){
 cat(x)
 if(log)
  {
@@ -59,14 +59,39 @@ if(sure_q)
  }
 }
 
+#user dir check. Reference databases are kept in this directory, created by updateDB
+if(is.null(opt[["userdir"]]))
+{
+byedie(paste0("Please provide the path to your user directory (-u) containing the pre-formatted reference databases.\nIf you do not have any local database yet, you can use the tool \'updateDB\'.","\n"))
+}
+
+#detect reference databases
+databases=list.files(opt[["userdir"]],pattern="\\.dbinfo",recursive=T,full.names=T)
+names(databases)=gsub("\\.dbinfo$","",gsub("^.+/","",databases))
+names(databases)=gsub("_",":",names(databases))
+if(length(databases)==0)
+{
+byedie(paste0("No reference database was found under ",'"',opt[["userdir"]],'"',".","Please check if the local directory is properly set.\nRemember, you can download and pre-format reference databases with ","'","UpdateDB",'"',".\n"))
+}
+dbdata=lapply(databases,function(x) readLines(x))
+
+#if -l switch is present, tool lists all configured reference databases and quits
+
+if (opt[["list_databases"]])
+{
+cat("Listing pre-formatted reference databases.\n")
+res=lapply(names(dbdata),function(x) writeLines(c(paste0("### ",x," ###"),dbdata[[x]],"\n")))
+cat(paste0("When running ContScout, please select a database. Examples: ",'"',"-d refseq",'"',", ",'"',"-d refseq:latest",'"',",",'"',"-d refseq:04f69a06",'"',"\n"))
+q(save="no",status=0)
+}
+
+
+
+
 if(is.null(opt[["dbname"]])){
 byedie("Please specify a database to be downloaded. Example: -d swissprot")
 }
 
-if(is.null(opt[["userdir"]]))
-{
-byedie("Please provide the path to your user directory with the pre-formatted reference databases.\n If you do not have any local database yet, you can use the tool \'updateDB\'.")
-}
 
 info=function(x,log=F){
 cat(paste(x,"\n"))
@@ -492,6 +517,7 @@ chunk.taxid=gsub(" .+","",chunk.taxid)
 chunk.id=gsub(" .+$","",chunk[headers])
 chunk.comment=gsub("^\\S+ ","",chunk[headers])
 newheaders=paste0(chunk.id,":",chunk.taxid," ",chunk.comment)
+newheaders=gsub("\\|","_",newheaders)
 chunk[headers]=newheaders
 write.table(chunk,paste0("tmp/",timestamp,"/",what,"_",info.data.decode[[1]][["version"]],"_tax.tmp"),append=T,quote=F,row.names=F,col.names=F)
 stop=Sys.time()
@@ -564,6 +590,7 @@ old_names=chunk[headers]
 taxchunk=gsub("NA","t32644",taxchunk)
 old_names.t=do.call(rbind,lapply(old_names,function(x) {d=unlist(strsplit(x," "));d_rest=paste(d[-1],collapse=" ");return(c(d[1],d_rest))}))
 new_names=paste0(old_names.t[,1],":t",taxchunk," ",old_names.t[,2])
+new_names=gsub("\\|","_",new_names)
 chunk[headers]=new_names
 if(!dir.exists(paste0("tmp/",timestamp)))
 {
