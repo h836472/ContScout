@@ -32,12 +32,12 @@ suppressPackageStartupMessages(library("parallel"))
 suppressPackageStartupMessages(library("bitops"))
 suppressPackageStartupMessages(library("GenomicRanges"))
 suppressPackageStartupMessages(library("rtracklayer"))
-suppressPackageStartupMessages(library("xlsx"))
+suppressPackageStartupMessages(library("WriteXLS"))
 
 cargs=commandArgs(trailingOnly=T)
 option_list = list(
   make_option(c("-a", "--aligner"), type="character", default="mmseqs", 
-              help="Aligner software to use", metavar="userdir"),
+              help="Aligner software to use", metavar="aligner"),
   make_option(c("-u", "--userdir"), type="character", default=NULL, 
               help="Path to local database repository folder", metavar="userdir"),
   make_option(c("-U", "--unknown"), type="character", default="keep", 
@@ -70,7 +70,7 @@ option_list = list(
   make_option(c("-p", "--pci"), type="character", default="20",
               help="Minimum percentage of sequence identity between query and hit.",metavar="pci"),
   make_option(c("-t", "--tmpdir"), type="character", default=NULL,
-             help="Path to temp folder.",metavar="TEMP"));
+             help="Path to temp folder.",metavar="tmpdir"));
 opt_parser = OptionParser(option_list=option_list,prog=progname);
 
 if(FALSE)
@@ -202,8 +202,14 @@ setwd(opt[["inputdir"]])
 #tmpdir check and set
 if(is.null(opt[["tmpdir"]]))
 {
-opt[["tmpdir"]]=paste0(opt[["userdir"]],"/tmp")
+opt[["tmpdir"]]=Sys.getenv("TMPDIR")
+if(nchar(opt[["tmpdir"]])==0)
+{
+opt[["tmpdir"]]="/tmp"
 }
+}
+info(paste0("Temporary dir set to:",opt[["tmpdir"]],"."))
+
 if(!file.exists(opt[["tmpdir"]]))
 {dir.create(opt[["tmpdir"]])}
 
@@ -295,7 +301,6 @@ if(is.null(opt[["what"]]))
 opt[["what"]]=tax.first
 }
 
-
 tidrl.file=paste0(taxdb.loc.sel,"/",db.sel.data["Tax_CRC","Value"],"_rankedtaxidlineage.RDS")
 tax=readRDS(tidrl.file)
 rankedlineage=readLines(paste0(taxdb.loc.sel,"/",db.sel.data["Tax_CRC","Value"],"_rankedlineage.dmp"))
@@ -378,7 +383,7 @@ gene.contig=lapply(gene.contig,function(x) return(sample(x,1)))
 gene.contig=unlist(gene.contig)
 
 GhostProts=setdiff(input.headers,names(gene.contig))
-writeLines(GhostProts,"GhostProteins.txt")
+writeLines(GhostProts,paste0(outdir,"/GhostProteins.txt"))
 if(!opt[["force"]])
 {
 if(length(GhostProts)>0) 
@@ -601,16 +606,7 @@ colnames(x.restline)="Count"
 x.head=rbind(x.head,x.restline)
 x.head[,"Percentage"]=round(x.head[,"Count"]/sum(x.head[,"Count"])*100)
 x.head[,"MedRLE_Len"]=depths[rownames(x.head)]
-return(x.head)
-}
-stats=lapply(stats,FUN=top6_summarizer)
-xls_out=paste0(outdir,"/diag_data/",opt[["what"]],"_Top6_TaxonProtTags.xlsx")
-
-info("Exporting taxon tag statistics on individual proteins.")
-
-for (s in names(stats))
-{
-data.out=stats[[s]]
+data.out=x.head
 data.out=cbind("NA",data.out)
 colnames(data.out)[1]="TaxonName"
 data.out=cbind("NA",data.out)
@@ -621,9 +617,13 @@ data.out[rownames(data.out)=="Other",c("MedRLE_Len")]="NA"
 data.out[,"TaxID"]=gsub("^t","",rownames(data.out))
 #we convert NCBI Taxon IDs to taxon names
 data.out[grep("^t\\d+",rownames(data.out)),"TaxonName"]=as.character(taxDict[grep("^t\\d+",rownames(data.out),value=T)])
-write.xlsx(data.out, xls_out, sheetName = s, 
-  col.names = TRUE, row.names = FALSE, append = TRUE)
+return(data.out)
 }
+stats_data_out=lapply(stats,FUN=top6_summarizer)
+xls_out=paste0(outdir,"/diag_data/",opt[["what"]],"_Top6_TaxonProtTags.xlsx")
+
+info("Exporting taxon tag statistics on individual proteins.")
+WriteXLS(stats_data_out,ExcelFileName=xls_out)
 
 ctgDB=cbind(ctgDB,protTaxCalls[ctgDB[,"ProteinID"],])
 saveRDS(ctgDB,paste0(outdir,"/R_saved_objects/ctgDB_with_taxCalls.RDS"))
@@ -687,8 +687,8 @@ tagdir=tagdir[order(-tagdir[,1]),]
 
 #creating a result call matrix. 1 means taxon is supported. 0 means taxon conflict between contig and host. NA means non-classified contig, without any consensus tag.
 rescall_outfile=paste0(outdir,"/diag_data/",opt[["what"]],"_ContigTaxSupportData.xlsx")
-write.xlsx(rescall, rescall_outfile, sheetName = "ContigTaxonSupport", 
-  col.names = TRUE, row.names = FALSE, append = FALSE)
+rescall_outdata=list("ContigTaxonSupport"=rescall)
+WriteXLS(rescall_outdata,rescall_outfile)
 
 saveRDS(rescall,paste0(outdir,"/R_saved_objects/rescall.RDS"))
 saveRDS(ctgDB.s,paste0(outdir,"/R_saved_objects/ctgDB.s.RDS"))
@@ -712,7 +712,6 @@ ctgDB[,"ProtSupport"]=ABC1.call[rownames(ctgDB)]
 ctgDB[is.na(ctgDB[,"ProtSupport"]),"ProtSupport"]=333333
 ctgDB.s=split(ctgDB,ctgDB[,"Contig"]) 
 ctgDB.sl=sapply(ctgDB.s,function(y) nrow(y))
-
 
 prot.callstats=summary(factor(ctgDB[,"ProtSupport"]),maxsum=nrow(ctgDB))
 prot.callstats=(prot.callstats[order(-prot.callstats)])
@@ -807,7 +806,7 @@ tagsummary[["ctg_mix_kept"]]=0
 tagsummary[["tagmatrix"]]=data.frame(matrix(nrow=0,ncol=3))
 colnames(tagsummary[["tagmatrix"]])=c("Dropped","Kept","Ratio")
 }
-saveRDS(tagsummary,paste0(outdir,"/",x,".tagsummary.RDS"))
+saveRDS(tagsummary,paste0(outdir,"/R_saved_objects/",x,".tagsummary.RDS"))
 giveback=list()
 
 any_dropped=union(indiv_protdrop.x,contig_protdrop.x)
@@ -864,9 +863,10 @@ options(width=200)
 resu3[,"QueryTaxonID"]=gsub("^t","",query_taxline)
 resu3=cbind(taxDict[query_taxline],resu3)
 colnames(resu3)[1]="QueryTaxonName"
+resu3=data.frame(resu3,stringsAsFactors=F)
 diagxls_out=paste0(outdir,"/diag_data/",opt[["what"]],"_RunDiag.xlsx")
-write.xlsx(resu3, diagxls_out, sheetName = "RunDiag", 
-  col.names = TRUE, row.names = FALSE, append = TRUE)
+WriteXLS(list("RunDiag"=resu3),diagxls_out)
+
 #At each taxon rank, we callect all dropped proteins / contigs up in the taxon lineage (superkingdom, superkingdom+kingdom, superkingdom+kingdom+phylum)
 cumulative_ctg_drop=lapply(1:length(offsets),function(x) return(unique(unlist(drop_contigs[x:length(offsets)]))))
 cumulative_prot_drop=lapply(cumulative_ctg_drop,function(x) return(ctgDB[ctgDB[,"Contig"]%in%x,]))
@@ -889,14 +889,10 @@ dropped_prot_taxdata=cumulative_prot_drop[[x]]
 for(i in colnames(dropped_prot_taxdata)){
 dropped_prot_taxdata[,i]=gsub("^t","",dropped_prot_taxdata[,i])
 }
-dpt_excelfile=paste0(outsubdir,"dropped_protein_taxontable.xlsx")
-
-if(nrow(dropped_prot_taxdata)>0){
-write.xlsx(dropped_prot_taxdata,dpt_excelfile,sheetName="DroppedProteinTax")
-}else
-{
-write.xlsx("No contaminating protein was found.",dpt_excelfile,sheetName="DroppedProteinTax")
-}
+dpt_excelfile=paste0(outsubdir,x,"_dropped_protein_taxontable.xlsx")
+dpt_outdata=list()
+dpt_outdata[[paste0(x,"_dropped_prot")]]=dropped_prot_taxdata
+WriteXLS(dpt_outdata,dpt_excelfile)
 kept=protDB[!protDB.TrimNames%in%dropped_prot_taxdata[,"ProteinID"]]
 dropped=protDB[protDB.TrimNames%in%dropped_prot_taxdata[,"ProteinID"]]
 writeXStringSet(kept,paste0(outsubdir,opt[["what"]],"_kept_proteins.fasta"))
