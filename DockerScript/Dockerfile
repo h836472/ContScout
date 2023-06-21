@@ -43,8 +43,7 @@ RUN \
     R -e 'if(!require('googlesheets4',quietly=TRUE)) {install.packages("googlesheets4",dependencies=TRUE,repos="http://cran.rstudio.com/")}' &&\
     R -e 'if(!require('GenomicRanges',quietly=TRUE)) {BiocManager::install("GenomicRanges")}' 
 RUN \
-    R -e 'if(!require('rJava',quietly=TRUE)) {install.packages("rJava",dependencies=TRUE,repos="http://cran.rstudio.com/")}' &&\
-    R -e 'if(!require('xlsx',quietly=TRUE)) {install.packages("xlsx",dependencies=TRUE,repos="http://cran.rstudio.com/")}' 
+    R -e 'if(!require('WriteXLS',quietly=TRUE)) {install.packages("WriteXLS",dependencies=TRUE,repos="http://cran.rstudio.com/")}' 
 #install latest DIAMOND
 RUN ncpu=$(lscpu -b -p=Core,Socket | grep -v '^#' | sort -u | wc -l)
 RUN curl -s https://api.github.com/repos/bbuchfink/diamond/releases/latest  | sed -Ene '/^ *"tag_name": *"v(.+)",$/s//\1/p' >/data/version.txt
