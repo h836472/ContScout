@@ -93,8 +93,7 @@ Explanation of ContScout parameters:
   - **-t/ --temp** #location of the temporary folder. 
   - **-a/ -aligner-** #algorithm to be used for database lookup (mmseqs or diamond)
   
-  
-  
+    
   
 
   
