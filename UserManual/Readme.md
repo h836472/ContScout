@@ -71,8 +71,6 @@ In order to run the tool, you will need
 - a server computer with at least 500 GB storage and 128 GB RAM. (for big data sets 2TB+ storage and 512 GB+ RAM recommended)  
   
 The following short example will guide you trough the analysis of an ultra-light example data set to be executed under Linux operating system using Singularity. The computational requirements for the demo set are marginal, it should run on any desktop / laptop computer.  
-
-
   
 Explanation of ContScout parameters:
   - **-h / --help** #displays help message
@@ -93,7 +91,8 @@ Explanation of ContScout parameters:
   - **-t/ --temp** #location of the temporary folder. 
   - **-a/ -aligner-** #algorithm to be used for database lookup (mmseqs or diamond)
   
-    
+
+**Explanation of the output folders**    
   
 
   
