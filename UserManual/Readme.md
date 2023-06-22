@@ -46,12 +46,12 @@ You can check the command line parameters of the tool from Docker / Singularity
 * Singularity: singularity exec <cs_sif_file> updateDB -h
 
 **Command line options for updateDB**
--u / --userdir #user directory. This is the location to store the local database copy.
--c / --cpu  #number of CPU-s to use (affects mainly the alignment step)
--t / --tempdir #Directory to write temporary files while installing a database.
--l / --list_databases #Prints a summary on the console about nstalled databases found in the user directory.
--d / dbname #database to be downloaded (nr, uniref,uniprotKB, or custom)
--i / info #database descriptor file with links to public sequence databases. Currently points to https://docs.google.com/spreadsheets/d/1_FPaAnyHVUhHzV8gwic2X3RKaN9vSl9jcTN_50T7X24
+-u / --userdir #user directory. This is the location to store the local database copy.  
+-c / --cpu  #number of CPU-s to use (affects mainly the alignment step)  
+-t / --tempdir #Directory to write temporary files while installing a database.  
+-l / --list_databases #Prints a summary on the console about nstalled databases found in the user directory.  
+-d / dbname #database to be downloaded (nr, uniref,uniprotKB, or custom)  
+-i / info #database descriptor file with links to public sequence databases. Currently points to https://docs.google.com/spreadsheets/d/1_FPaAnyHVUhHzV8gwic2X3RKaN9vSl9jcTN_50T7X24  
 
 See tutorials on how to import reference databases, including the option to use custom local sequence files.
 Singularity example installing swissprot database (for testing only, not recommended for real analysis)
