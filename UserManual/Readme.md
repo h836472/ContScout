@@ -46,12 +46,13 @@ You can check the command line parameters of the tool from Docker / Singularity
 * Singularity: singularity exec <cs_sif_file> updateDB -h
 
 **Command line options for updateDB**
--u / --userdir #user directory. This is the location to store the local database copy.  
--c / --cpu  #number of CPU-s to use (affects mainly the alignment step)  
--t / --tempdir #Directory to write temporary files while installing a database.  
--l / --list_databases #Prints a summary on the console about nstalled databases found in the user directory.  
--d / dbname #database to be downloaded (nr, uniref,uniprotKB, or custom)  
--i / info #database descriptor file with links to public sequence databases. Currently points to https://docs.google.com/spreadsheets/d/1_FPaAnyHVUhHzV8gwic2X3RKaN9vSl9jcTN_50T7X24  
+- **-h / --help** #displays help message
+- **-u / --userdir** #user directory. This is the location to store the local database copy.  
+- **-c / --cpu**  #number of CPU-s to use (affects mainly the alignment step)  
+- **-t / --tempdir** #Directory to write temporary files while installing a database.  
+- **-l / --list_databases** #Prints a summary on the console about nstalled databases found in the user directory.  
+- **-d / --dbname** #database to be downloaded (nr, uniref,uniprotKB, or custom)  
+- **-i / --info** #database descriptor file with links to public sequence databases. Currently points to https://docs.google.com/spreadsheets/d/1_FPaAnyHVUhHzV8gwic2X3RKaN9vSl9jcTN_50T7X24  
 
 See tutorials on how to import reference databases, including the option to use custom local sequence files.
 Singularity example installing swissprot database (for testing only, not recommended for real analysis)
@@ -76,18 +77,21 @@ The following short example will guide you trough the analysis of an ultra-light
 Explanation of ContScout parameters:
   - **-h / --help** #displays help message
   - **-u / --userdir** (user directory) path to the folder, where the local reference database is stored
-  - **-c** number of CPU-s to use (affects mainly the alignment step)
-  - **-d** name of the database to be used
-  - **-i** (input directory) path to the directory with the query data (contains subfolders FASTA_prot and GFF_annot)
-  - **-q** the expected NCBI taxon ID of the query genome. Corresponds to the sequenced species that we screen for contamination.
-  - **-f** when discovering inconsistencies between GFF annotation and fasta proteins file, this flag forces analysis to continue 
-  - **-r** skip the database search and reuse ABC file from previous run if possible
-  - **-n** perform the analysis without using any GFF/GTF annotation file
-  - **-s** MMSeqs sensitivity parameter [default: 2]
-  - **-x** which group to filter out. Accepted values: (all, viruses, bacteria, archaea, fungi, viridiplantae, metazoa, other_euk) [default:all]
-  - **-p** minimum percentage of sequence identity required. This filter preceedes dynamic trimming. [default: 20]
-  - **-t** location of the temporary folder. 
-  - **-a** algorithm to be used for database lookup (mmseqs or diamond)
+  - **-U / --unknown** Shall the tool keep or drop contigs that can not be tagged (mixed signal, unknown proteins). Default: keep
+  - **-c / --cpu** number of CPU-s to use (affects mainly the alignment step)
+  - **-w / --what** number of CPU-s to use (affects mainly the alignment step)
+  - **-d / --dbname** name of the pre-formatted database to be used (within the user folder)
+  - **-i / --inputdir** (input directory) path to the directory with the query data (contains subfolders *protein_seq* and *annotation_data*)
+  - **-q / --querytax** the expected NCBI taxon ID of the query genome. Corresponds to the sequenced species that try to remove contamination from.
+  - **-f / --force** when discovering inconsistencies between GFF annotation and fasta proteins file, this flag forces analysis to continue 
+  - **-r / --reuse_abc** skip the database search and reuse ABC file from previous run if possible
+  - **-n / --no_annot** perform the analysis without using any annotation file. Not recommended.
+  - **-s / --sensM** MMSeqs sensitivity parameter [default: 2]
+  - **-S / --sensD** Diamond sensitivity parameter [default: "fast"]
+  - **-p / --pci** minimum percentage of sequence identity required. [default: 20]
+  - **-m / --memlimit** limit Diamond / MMSeqs to use this amount of RAM. [example: 150G]
+  - **-t/ --temp** location of the temporary folder. 
+  - **-a/ -aligner-** algorithm to be used for database lookup (mmseqs or diamond)
   
   
   
