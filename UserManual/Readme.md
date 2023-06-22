@@ -1,27 +1,37 @@
 **Summary**
 
-ContScout is a software designed to identify and remove foreign sequences that appear in draft genomes as a consequence of contamination. The tool uses fast sequence lookup tools (MMSeqs or DIAMOND) to get taxonomical data for each predicted protein from a user-selected reference protein database (examples: uniprotKB, nr, refseq). As a major improvement over previous methods that rely on reference database and use a user-selected similarity threshold, ContScout applies a dynamic trimming on each hit list extracting the best-scoring hits that are most relevant when trying to classify proteins.
-As an additional improvement, coding site spatial information from annotation (gff/gtf file) is used to calculate a consensus taxon call over assemby contigs / scaffolds. Then, all proteins from contigs / scaffolds with conflicting taxon information are marked from removal.  
+ContScout is a software designed to identify and remove foreign sequences that appear in draft genomes as a consequence of contamination. The tool uses fast sequence lookup tools (MMSeqs or DIAMOND) to get taxonomical data for each predicted protein from a user-selected reference protein database (examples: uniprotKB, nr, uniref). With the current version, ContScout performs taxon call for each query sequences at multiple taxon levels (superkingdom, kingdom, phylum, class, order and family). In addition to the taxon label, a vote weight (between 1.0 and 2.0) is added, depending on the number of top-scoring consecutive hits that back up the taxon call. Based on the user-provided annotation file (gff/gtf file), proteins are grouped according according to assembled contigs / scaffolds and individual taxon votes are summed to yield a consensus taxon call for each contig / scaffolds. At each taxon level, contigs with taxon label not matching the expected lineage of the query genome are marked for removal, together with all coded proteins.
   
-__*Please note*__: with the current reference database taxon sampling, ContScout can only reliably differentiate between high level taxons, such as finding bacterial contamination in eukaryotes or identifying fungal contamination within plants. It is not designed for identifying contamination within a major eukaryote clade, such as identifying human contamination in an insect draft genome.  
-For more information about the tool, please check out the ContScout manuscript under  
-https://www.biorxiv.org/content/10.1101/2022.11.17.516887v1.  
+__*Please note*__: Reference database taxon sampling has a big effect on ContScout ability to separate a contaminant from a closely related host. If both genomes have at least a few close representatives from the same family, ContScout is expected to accurately distinguish contamination from host proteins. However, for a sparsely sampled query, analysis at finer taxonomic resolution (family, order) might not be feasible. The program has excessive diagnostic capabilities to inform the users about potentially conflicting situations at which the results need to be handled with care. (see examples below) 
 
 **System requirements**
 
-ContScout is written in R language. Both the code and the external apps it depends on are designed to run in a Unix/Linux environment and was tested on Linux, although with containerization (Docker, Singularity) running the tool should run on a machine with Windows / MacOS as well...  
+ContScout is written in R language. Both the code and the external apps it depends on are designed to run in a Unix/Linux environment and was tested on several Linux distributions (Ubuntu, Debian, CentOS), although with the containerization (Docker, Singularity) running the tool should be possible on a machine with Windows / MacOS as well...  
 
-External application as well as some ContScout components benefit from SMP multi-cpu machines and the system is written to automatically find the best vector instructions that the processor supports (avx2 >> sse4.1 >> sse2). ContScout requrires at least 128 GB of RAM and 500 GB of storage space but depending on the number of locally mirrored reference databases the storage footprint can easily reach 1-2 TB. There is a trade between allocated RAM and database search time where adding more RAM (256 GB, 512GB or 1 TB) significantly speeds up the database lookup step.
+External application as well as some ContScout components benefit from SMP multi-cpu machines and the system is written to automatically find the best vector instructions that the processor supports (avx2 >> sse4.1 >> sse2). Due to working with huge databases, ContScout requrires at least 128 GB of RAM and 500 GB of storage space but depending on the number of locally mirrored reference databases the storage footprint can easily reach several TeraBytes. There is a trade between allocated RAM and database search time where adding more RAM (256 GB, 512GB or 1 TB) significantly speeds up the database lookup step. Typical installation time for the tool from Dockerfile is less then an hour. Typical database setup for "test" (swissprot, tutorial) databases is a matter of minutes, while "real" databases take several hours to download and pre-format before analysis. Runtime for a typical eukaryote genome is between 1 and 2 hours on a 24-core server / workstation computer.
 
 **Installation**
 
 ContScout can be installed by
   
-(1) natively, after manually installing all pre-requisites. (Not recommended, please contact the authors if you have to install the tool this way).  
+(1) natively, by downloading the two main scripts "updateDB" and "ContScout" after manually installing all pre-requisites. Please note that this is not recommended although authors can provide help with the local installation if needed. 
+Pre-requisites for a native installation
+* python 3.x  
+* java (tested with openJDK 17)  
+* curl, wget tools  
+* R programming language (tested with v4.1.2)
+* several R packages (optparse, bitops, Biostrings, rtracklayer, rlang, GenomicRanges, WriteXLS, googlesheets4)
+* NCBI blast (for importing NCBI databases. Tested with 2.12.0+)
+* awk
+* DIAMOND (tested with v2.1.8)  
+* MMSeqs (tested with version "25688290f126d7428155ad817e9809173fe78afd")
+* jacksum (tested with v3.5.0) 
+
 (2) as a Docker image, locally built based on the docker file provided at GitHub (Recommended for advanced users / developers)  
 * git clone https://github.com/h836472/ContScout.git
 * cd ContScout/DockerScript/
 * docker build ./ -t <your_container_tag> --build-arg CACHEBUST=$(data+%s)
+Please allow 40-60 minutes of compilation time.
 
 (3) as a Docker / Singularity image, pulled from dockerhub (generally recommended installation method)  
 * Docker: docker pull h836472/contscout:latest
@@ -30,43 +40,26 @@ ContScout can be installed by
 
 **Set up locally mirrored reference databases**
 
-The ContScout package contains an automated database updater tool that fetches, labels and pre-formats public protein databases, such as refseq, nr or uniprotKB. Taxonomical labeling is based on the taxonomy database from NCBI.  
+The ContScout package contains an automated database updater tool called "updateDB" that fetches, labels and pre-formats public protein databases, such as uniref, nr or uniprotKB. Taxonomical labeling is based on the taxonomy database from NCBI.  
 You can check the command line parameters of the tool from Docker / Singularity
 * Docker: docker run h836472/contscout:latest updateDB -h
 * Singularity: singularity exec <cs_sif_file> updateDB -h
 
-Singularity example installing uniprotKB database, pre-formatted for both MMSeqs and Diamond lookups  
-  
->singularity exec -B <local_database_directory>:/databases -B <local_tmp_folder>:/tmp <singularity image> updateDB -u /databases --dbname uniprotKB -f MD >-i https://github.com/h836472/ContScout/raw/main/DataBaseInfo/DB.info.txt"
-  
+**Command line options for updateDB**
+-u / --userdir #User directory. This is the location to store the local database copy.
+-t / --tempdir #Directory to write temporary files while installing a database.
+-l / --list_databases #Prints a summary on the console about nstalled databases found in the user directory.
+-d / dbname #database to be downloaded (nr, uniref,uniprotKB, or custom)
+-i / info #database descriptor file with links to public sequence databases. Currently points to https://docs.google.com/spreadsheets/d/1_FPaAnyHVUhHzV8gwic2X3RKaN9vSl9jcTN_50T7X24
 
-Singularity example installing nr database, pre-formatted for MMSeqs lookups  
+See tutorials on how to import reference databases, including the option to use custom local sequence files.
+Singularity example installing swissprot database (for testing only, not recommended for real analysis)
   
->singularity exec -B <local_database_directory>:/databases -B <local_tmp_folder>:/tmp <singularity image> updateDB -u /databases --dbname nr_prot -f M -i >https://github.com/h836472/ContScout/raw/main/DataBaseInfo/DB.info.txt"
+>singularity exec -B <local_database_directory>:/databases -B <local_tmp_folder>:/tmp <singularity image> updateDB -u /databases --dbname swissprot 
   
-__*Please note*__: While performing a protein database installation, updateDB also downloads the latest taxonomy database from NCBI.
+__*Please note*__: While performing a protein database installation, updateDB also downloads the latest taxonomy database from NCBI, that will be bound to the reference database.
   Public databases are ***huge***:, with compressed archives exceeding 50-80 GB. Depending on the network connection, download and the subsequent formatting steps will ***take several hours***.
-  
- **Set up your own local reference database**
-  
-Currently, there is no automated solution to turn your local protein fasta file into a reference database. However, a small-scale "demo" database is available as an example for download at the GitHub repository under the Example folder and can be used as a guide regarding the file formats. 
-First, it is recommended to download the latest NCBI taxonomy database by  
-  
-singularity exec -B <local_database_directory>:/databases contscout_latest.sif updateDB -u /databases --dbname ncbi_taxonomy -i https://github.com/h836472/ContScout/raw/main/DataBaseInfo/DB.info.txt
-
-Then, please add the taxonomy information to the fasta headers of your reference file using the format below:  
-  
-\>***{Accession_Number}***:***t{TaxonID}***:***{HighLevelTaxonName}*** {Optional_description}  
-\>***UniRef100_UPI00156F6715***:***t287***:***Bacteria*** major capsid protein n=1 Tax=Pseudomonas aeruginosa TaxID=287 RepID=UPI00156F6715  
-  
-Please use MMSeqs or DIAMOND to convert your reference database into search databases. (mmseqs createdb ... , DIAMOND makedb ...)
-Copy the reference databases to your local database repository using the folder structure similar to the "demo" database provied as an example.
  
-Then, register each of your custom databases by adding a new line in the *db_inventory.txt* file within your local database repository.
-For manually added databases, the minimum required fields are "db.Name", "db.Loc", and "Format". Please check the *db_inventory.txt* file in the example set as a reference.
-
-Later this year, a conversion tool, similar to updateDB, shall be released that automates user database addition.
-  
 **Running ContScout**
 
 In order to run the tool, you will need  
@@ -75,7 +68,7 @@ In order to run the tool, you will need
 - a query data folder, containing fasta protein file and gff / gtf annotation file (see demo data for example)
 - a server computer with at least 500 GB storage and 128 GB RAM. (for big data sets 2TB+ storage and 512 GB+ RAM recommended)  
   
-The following tutorial will guide you trough the analysis of an ultra-light example data set to be executed under Linux operating system using Singularity. The computational requirements for the demo set are marginal, it should run on a desktop / laptop computer.  
+The following short example will guide you trough the analysis of an ultra-light example data set to be executed under Linux operating system using Singularity. The computational requirements for the demo set are marginal, it should run on any desktop / laptop computer.  
 
 Steps
   
