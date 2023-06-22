@@ -82,7 +82,7 @@ Explanation of ContScout parameters:
   - **-w / --what** #main project name [default: name derived from NCBI taxonID]
   - **-d / --dbname** #name of the pre-formatted database to be used (within the user folder)
   - **-i / --inputdir** #path to input directory with the query data (contains subfolders *protein_seq* and *annotation_data*)
-  - **-q / --querytax** #the expected NCBI taxon ID of the query genome. Corresponds to the sequenced species that try to remove contamination from.
+  - **-q / --querytax** #the expected NCBI taxon ID of the query genome, that we try to validate / decontaminate.
   - **-f / --force** #when discovering inconsistencies between GFF annotation and fasta proteins file, this flag forces analysis to continue 
   - **-r / --reuse_abc** #skip the database search and reuse ABC file from previous run if possible
   - **-n / --no_annot** #perform the analysis without using any annotation file. Not recommended.
