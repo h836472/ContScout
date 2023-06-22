@@ -13,6 +13,9 @@ Pre-compiled docker image can be downloaded by the following command:
 **More information**  
 Please consult Balint et al. 2022 "Purging genomes of contamination eliminates systematic bias from evolutionary analyses of ancestral genomes" manuscipt, with a pre-print copy available at https://biorxiv.org/cgi/content/short/2022.11.17.516887v1. 
 
+**News**
+After a major improvement of the classification algorithm, Contscout can not separate closely related host-contamination pairs. In simulation, ContScout was demonstrated to accurately separate contamination at family level (i.e. * *Candida albicans* * contamination cleaned from * *Saccharomyces cerevisiae* *.)
+
 **Notes**
 * The ContScout version that was used for the analyses described in the bioRxiv manuscript has been frozen and placed under the branch "bioRxiv_version". Journal review of the manuscript is on-going that has resulted in many changes in the tool, including a major improvement on the taxon labelling engine. Branch "main" holds the most up-to-date software version with the latest features. Please note that "main" branch is going trough a major update procedure in the following approximately two weeks. (8th July-20th July 2023) Before using this tool in production, please consult the authors to ensure you receive the latest tool and the most accurate user manual.
 * Please note that many command line flags / options have changed. Do not forget to check the new syntax with ContScout -h.
