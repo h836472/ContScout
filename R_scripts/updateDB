@@ -420,7 +420,7 @@ unlink(paste0("tmp/",timestamp),recursive=T)
 db_summary=paste0(c("Name: ","Source: ","NumProts: ","DB_CRC: ","Tax_CRC: ","MMSeqs_DB: ","Diamond_DB: ","Creation_Date: "),c(what,"NCBI",numheaders,fasta.crc,tax_CRC,db_loc,timetext))
 writeLines(db_summary,paste0(what,"/",info.crc,"/db_info/",what,"_",info.crc,".dbinfo"))
 unlink(paste0("tmp/",timestamp),recursive=T)
-system(paste("gzip ",fa_outfile))
+system(paste0("pigz -p ",opt[["cpu"]]," ",fa_outfile))
 }else
 {
 info(paste0("Latest version of database ",'"',what,'"'," is already installed."))
