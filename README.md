@@ -13,7 +13,7 @@ Pre-compiled docker image can be downloaded by the following command:
 **More information**  
 Please consult Balint et al. 2022 "Purging genomes of contamination eliminates systematic bias from evolutionary analyses of ancestral genomes" manuscipt, with a pre-print copy available at https://biorxiv.org/cgi/content/short/2022.11.17.516887v1. 
 
-**News**
+**News**  
 After a major improvement of the classification algorithm, Contscout can not separate closely related host-contamination pairs. In simulation, ContScout was demonstrated to accurately separate contamination at family level (i.e.  *Candida albicans*  contamination cleaned from  *Saccharomyces cerevisiae*.)
 
 **Notes**
