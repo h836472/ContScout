@@ -46,7 +46,8 @@ You can check the command line parameters of the tool from Docker / Singularity
 * Singularity: singularity exec <cs_sif_file> updateDB -h
 
 **Command line options for updateDB**
--u / --userdir #User directory. This is the location to store the local database copy.
+-u / --userdir #user directory. This is the location to store the local database copy.
+-c / --cpu  #number of CPU-s to use (affects mainly the alignment step)
 -t / --tempdir #Directory to write temporary files while installing a database.
 -l / --list_databases #Prints a summary on the console about nstalled databases found in the user directory.
 -d / dbname #database to be downloaded (nr, uniref,uniprotKB, or custom)
@@ -70,51 +71,11 @@ In order to run the tool, you will need
   
 The following short example will guide you trough the analysis of an ultra-light example data set to be executed under Linux operating system using Singularity. The computational requirements for the demo set are marginal, it should run on any desktop / laptop computer.  
 
-Steps
-  
-1., create a work directory (change directory path according to your system)
-  >mkdir /data/CS_test  
-  >cd /data/CS_test  
-  
- 2., download and extract the database as well as the draft genome file for the tutorial
- >wget https://github.com/h836472/ContScout/raw/main/Example/databases.tar.gz  
- >tar -xvf databases.tar.gz  
- >rm databases.tar.gz  
- >wget https://github.com/h836472/ContScout/raw/main/Example/query.tar.gz  
- >tar -xvf query.tar.gz  
- >rm query.tar.gz   
 
-Please take some time to familiarize yourself with the organization of the local repository database (file ***databases/db_inventory.txt*** and database subfolders) and especially with the layout of the query data (***query/Quersube***).   
-Your input files shall be copied in a single query directory  (***query/Quersube/***) with the protein fasta copied under "FASTA_prot" and the annotation file copied under "GFF_annot" subfolder, respectively. Both gzip-comressed and uncompressed fasta and gff/gtf files are accepted.  
- 
-3., Download and prepare ContScout image for Singularity  
->mkdir singularity_images  
->cd singularity_images  
->singularity pull docker://h836472/contscout:latest  
->cd ..  
- 
-4., Start ContScout via a Singularity call
->singularity exec -B /data/CS_test/databases:/databases -B /data/CS_test/query:/query -B /tmp:/tmp /data/CS_test/singularity_images/contscout_latest.sif ContScout -u /databases -i /query/Quersube -q 58331 -c 2 -x all -p 20 -t /tmp -d demo -a mmseqs
-
-Please notice the singularity "bind directory" commands, that are written in ***-B host:guest*** format. Each of them adds an existing host directory to the ContScount container with the guest directory name as specified. It is recommended, that singularity bind parameters are carefully matched with ContScout parameters. For an example see ***-B /tmp:/tmp singularity*** later parameter followed by ContScout parameter ***-t /tmp***.
- 
-  When ready, ContScout creates an output directory within the folder that was specidied by the user via the -i parameter. Output folder follows the following scheme: ***{species\_latin\_name}\_tax\_{taxonID}\_{timestamp}***. Example: ***Quercus\_suber\_tax\_58331\_13Jan_2023_18_34***.
-  
-Description of the output files  
-  - ***Cleaned.ProteinSeq.faa*** contains proteins that were kept by the filter (proteins without conflicting taxon data)  
-  - ***Contamination.ProteinSeq.faa*** contains proteins that were tagged as contamination and were removed from the input fata  
-  - ***Ghost.ProteinSeq.faa*** contains proteins that are present in the input fasta file but are not mentioned in the gff / gtf annotation  
-  - ***Contscout_{timestamp}.log is a log file with running parameters and messages from ContScout
-  - ***various ".RDS" files are generated with saved intermediate data. All of them are in R data file format, and can be opened with readRDS() in R.
-  
- Fasta headers in file in ***Contamination.ProteinSeq.faa*** contain information regarding the removed proteins in the following format:   
- \>{ID} ProtTag:{protein_taxon_call}\|ContigTag:{contig_level_taxon_call}\|CtgNumProt:{number_of_proteins_on_removed_contig}  
-  Example:  
-  \>XP_023876615.1 ProtTag:fungi|ContigTag:fungi|CtgNumProt:67
   
 Explanation of ContScout parameters:
-  - **-h** displays help message
-  - **-u** (user directory) path to the folder, where the local reference database is stored
+  - **-h / --help** #displays help message
+  - **-u / --userdir** (user directory) path to the folder, where the local reference database is stored
   - **-c** number of CPU-s to use (affects mainly the alignment step)
   - **-d** name of the database to be used
   - **-i** (input directory) path to the directory with the query data (contains subfolders FASTA_prot and GFF_annot)
