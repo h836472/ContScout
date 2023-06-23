@@ -453,7 +453,7 @@ if(update_is_needed(db=what,crc=info.crc,udir=opt[["userdir"]]))
 {
 info.data=(xmlParse(paste0("tmp/",timestamp,"/",info_outfile)))
 info.data=do.call(paste, as.list(capture.output(info.data)))
-if(what==("uniref90")
+if(what=="uniref90")
 {
 info.data.decode=list()
 info.data.decode[["uniref90.fasta.gz"]]=list()
