@@ -114,12 +114,18 @@ Outputs of ContScout are organized in an output folder (example: *Saccharomyces_
 The core assumption behind ContScout is that true contamination is organized into homogenous contigs / scaffolds while other foreign-looking proteins (including ones obtained via horizontal gene transfer) are sharing contigs with genuine host proteins. To this end, ContScout compares individually picked foreign-looking proteins ("IndivProtDrop") with proteins based on contig filtering (CtgProtDrop).   
   
 **Important to note:**  
-Depending on the reference database, the number of closely related sequences at a fine-grade taxon level could be low. In such case, the top hits of some genuine host proteins might apper from syster clades instead of the expected taxon. Currently, ContScout handles any taxon mismatch as potential contamination thus for an "exotic" genome without sufficient taxon support in the database, eventually the entire genome could be marked for disposal at the finest taxon levels. Care must be taken by the user to decide, which is the highest taxon level that is feasible for a particular host organism and reference database combination.
+Depending on the reference database, the number of closely related sequences at a fine-grade taxon level could be low. In such case, the top hits of some genuine host proteins might apper from sister clades instead of the expected taxon. Currently, ContScout flags any taxon mismatch as potential contamination and tries to resolv these cases at the next level, where hits are summarized over contigs.
+Indicators of the analysis failing at a particular taxon level:  
+-Value at medRLE (that is the median number of reads supporting individual protein taxon calls) dropps below 5
+-mixed taxon tags, that are present both in the "kept" and "dropped" groups appear. 
+-value in "IndivProtDrop" column sharply rises while "CtgProtDrop" value remains low. Jackard value remains close to 0, indicating conflicts between individually marked and contig-level marked proteins.
+-in extreme cases, a large fraction of query proteins might appear tagged for removal either exclusively in CtgProtDrop or both in CtgProtDrop and CtgProtDrop columns.
 
-Columns *NumMixedTag*, *MixedTagProtsDropByCtg* *MixedTagProtsKeptByCtg* can help evaluating such situations.
-
-Also, it is important to note changes in the MedRLE column that informs the user about the median number of reads supportin individual protein calls at each taxon level. Values lower than ~3 at fine taxon levels are good indication of a decreasing taxon sampling, that can affect the prediction performance of the tool.
-  
+Indicators of the reliable analysis results:   
+-MedRLE values remaining high (>10) for each taxon level
+-Few mixed taxon between keeped and dropped protein groups. The vast majority of mixed proteins remain in the host section.
+-Similar values at IndivProtDrop and CtgProtDrop columns, with Jaccard value being close to 1, indicating good agreement between the individual protein tags and contig-based calls
+-Same CtgProtDrop values across multiple consecutive taxon levels
   
   
 
