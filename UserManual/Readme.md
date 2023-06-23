@@ -116,7 +116,7 @@ The core assumption behind ContScout is that true contamination is organized int
 **Important to note:**  
 Depending on the reference database, the number of closely related sequences at a fine-grade taxon level could be low. In such case, the top hits of some genuine host proteins might apper from sister clades instead of the expected taxon. Currently, ContScout flags any taxon mismatch as potential contamination and tries to resolv these cases at the next level, where hits are summarized over contigs.
 
-**Indicators of the analysis failing at a particular taxon level:**
+**Indicators of dubious analysis results at particular taxon levels:**
 - value at medRLE (that is the median number of reads supporting individual protein taxon calls) dropping below 5
 - mixed taxon tags, that are present both in the "kept" and "dropped" groups appear. 
 - value in "IndivProtDrop" column sharply rises while "CtgProtDrop" value remains low. Jackard value remains close to 0, indicating conflicts between individually marked and contig-level marked proteins.
