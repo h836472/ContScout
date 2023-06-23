@@ -128,6 +128,7 @@ Depending on the reference database, the number of closely related sequences at 
 - similar values appear at IndivProtDrop and CtgProtDrop columns, with the Jaccard value being close to 1, indicating good agreement between the individual protein tags and contig-based calls  
 - similar CtgProtDrop values appearing across multiple consecutive taxon levels  
   
-  
+Once ContScout finishes, host and contamination protein files created at each taxon level are written in the "filtered outputs", together with a taxon table summary. Folder R_saved_object holds various data tables and lists saved during the analysis in R data format. They can be opened within an R console with command readRDS. Important diagnostics data files include "rescall.RDS" and "ctgDB_with_taxCalls.RDS" These files are meant for the curious / debugger user and are not detailed in the manuscript. Please contact the authors if you have any question regaring these RDS files.
+
 
 
