@@ -69,10 +69,6 @@ byedie(paste0("Please provide the path to your user directory (-u) containing th
 databases=list.files(opt[["userdir"]],pattern="\\.dbinfo",recursive=T,full.names=T)
 names(databases)=gsub("\\.dbinfo$","",gsub("^.+/","",databases))
 names(databases)=gsub("_",":",names(databases))
-if(length(databases)==0)
-{
-byedie(paste0("No reference database was found under ",'"',opt[["userdir"]],'"',".","Please check if the local directory is properly set.\nRemember, you can download and pre-format reference databases with ","'","UpdateDB",'"',".\n"))
-}
 dbdata=lapply(databases,function(x) readLines(x))
 
 #if -l switch is present, tool lists all configured reference databases and quits
