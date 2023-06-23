@@ -129,6 +129,7 @@ Depending on the reference database, the number of closely related sequences at 
 - similar CtgProtDrop values appearing across multiple consecutive taxon levels  
   
 Once ContScout finishes, host and contamination protein files created at each taxon level are written in the "filtered outputs", together with a taxon table summary. Folder R_saved_object holds various data tables and lists saved during the analysis in R data format. They can be opened within an R console with command readRDS. Important diagnostics data files include "rescall.RDS" and "ctgDB_with_taxCalls.RDS"   
+
 These RDS files are saved for debugging purposes and the formats and contents are not discussed in detail in the user manual. Please contact the authors if you have any question regaring these RDS files.
 
 
