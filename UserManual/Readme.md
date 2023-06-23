@@ -62,15 +62,18 @@ Singularity example installing swissprot database (for testing only, not recomme
 __*Please note*__: While performing a protein database installation, updateDB also downloads the latest taxonomy database from NCBI, that will be bound to the reference database.
   Public databases are ***huge***:, with compressed archives exceeding 50-80 GB. Depending on the network connection, download and the subsequent formatting steps will ***take several hours***.
  
-**Running ContScout**
-
-In order to run the tool, you will need  
-- a containerization environment, capable of running Docker images (Docker, Singularity, Shifter, etc)
-- ContScout docker image (built locally with Docker using the source code at GitHub or downloaded directly from DockerHub)
-- a query data folder, containing fasta protein file and gff / gtf annotation file (see demo data for example)
-- a server computer with at least 500 GB storage and 128 GB RAM. (for big data sets 2TB+ storage and 512 GB+ RAM recommended)  
-  
-The following short example will guide you trough the analysis of an ultra-light example data set to be executed under Linux operating system using Singularity. The computational requirements for the demo set are marginal, it should run on any desktop / laptop computer.  
+**How to run ContScout**
+- check if your computer meets the program's minimum requirements (150 GB RAM, 500 GB of storage. Recommended: >=512 GB RAM, >=4 TB storage)  
+- install ContScout  
+- install a reference database using updateDB  
+- create an input folder for your query data, that shall contain two subfolders: "protein_seq" and "annotation_data" 
+- place fasta protein file in "protein_seq" folder  
+- place the (gtf or gff) annotation file annotation file in "annotation_data" folder  
+- look up the taxon ID for your genome of interest in NCBI taxonomy database. 
+- check if the default parameters fit your analysis (-U, -f, -s, -S, -a -m, -w)  
+- run ContScout
+- check the console message / log files for warnings / errors.
+- carefully check $PROJECTNAME_RunDiag.xls. This file holds important metrices about the run performance. (see output file explanaiton below and tutorial)
   
 Explanation of ContScout parameters:
   - **-h / --help** #displays help message
@@ -90,7 +93,19 @@ Explanation of ContScout parameters:
   - **-m / --memlimit** #limit Diamond / MMSeqs to use this amount of RAM. [example: 150G]
   - **-t/ --temp** #location of the temporary folder. 
   - **-a/ -aligner-** #algorithm to be used for database lookup (mmseqs or diamond)
-  
+
+Run test example for the unpatient (assuming locally installed tool, placed in search path):
+
+>cd #enter your home folder
+>mkdir test
+>mkdir test/query
+>mkdir test/query/protein_seq
+>mkdir test/query/annotation_data
+>mkdir test/database
+>updateDB -u ~/test/database -d swissprot
+>wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/146/045/GCF_000146045.2_R64/GCF_000146045.2_R64_protein.faa.gz >test/query/protein_seq/GCF_000146045.2_R64_protein.faa.gz
+>wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/146/045/GCF_000146045.2_R64/GCF_000146045.2_R64_genomic.gff.gz >test/query/annotation_data/GCF_000146045.2_R64_genomic.gff.gz
+>ContScout -u ~/test/database -d swissprot -i ~/test/query/ -q 559292 -t /tmp
 
 **Explanation of the output folders**    
   
