@@ -110,8 +110,16 @@ Run test example for the unpatient (assuming locally installed tool, placed in s
 
 **Explanation of the output folders**    
   
-Outputs of ContScout are organized in an output folder ($PROJECTNAME_$TIMESTAMP), distributed in several subfolders (diag_data, R_saved_objects, filtred_outputs)  
-"diag data" contains the $PROJECTNAME_RunDiag.xlsx that gives important quality control data regarding the run.
+Outputs of ContScout are organized in an output folder (example: *Saccharomyces_cerevisiae_S288C_tax_559292_23Jun_2023_07_26*), distributed in several subfolders (*diag_data*, *R_saved_objects*, *filtred_outputs*) . Directory "diag data" contains a $ProjectName_RunDiag.xlsx that provides user with essential quality control data regarding the run.
+The core assumption behind ContScout is that true contamination is organized into homogenous contigs / scaffolds while other foreign-looking proteins (including ones obtained via horizontal gene transfer) are sharing contigs with genuine host proteins. To this end, ContScout compares individually picked foreign-looking proteins ("IndivProtDrop") with proteins based on contig filtering (CtgProtDrop). 
+**Important to note:**
+Depending on the reference database, the number of closely related sequences at a fine-grade taxon level could be low. In such case, the top hits of some genuine host proteins might apper from syster clades instead of the expected taxon. Currently, ContScout handles any taxon mismatch as potential contamination thus for an "exotic" genome without sufficient taxon support in the database, eventually the entire genome could be marked for disposal at the finest taxon levels. Care must be taken by the user to decide, which is the highest taxon level that is feasible for a particular host organism and reference database combination.
+
+If both number are close to zero, query genome is clean. 
+If the two numbers are similar, with the Jaccard number being close to 1, contamination is likely present, well focused on contigs separate from host.
+
+
+When "IndivProtDrop" value is much larger than "CtgProtDrop" with the Jaccard value being close to 0, the analysis 
   
   
   
