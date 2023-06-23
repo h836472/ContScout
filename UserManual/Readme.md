@@ -105,7 +105,7 @@ Run test example for the unpatient (assuming locally installed tool, placed in s
 >updateDB -u ~/test/database -d swissprot  
 >wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/146/045/GCF_000146045.2_R64/GCF_000146045.2_R64_protein.faa.gz -O test/query/protein_seq/GCF_000146045.2_R64_protein.faa.gz  
 >wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/146/045/GCF_000146045.2_R64/GCF_000146045.2_R64_genomic.gff.gz -O test/query/annotation_data/GCF_000146045.2_R64_genomic.gff.gz  
->updateDB -u ~/test/database -d swissprot
+>updateDB -u ~/test/database -d swissprot  
 >ContScout -u ~/test/database -d swissprot -i ~/test/query/ -q 559292 -t /tmp 
 
 **Explanation of the output folders**    
