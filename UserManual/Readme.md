@@ -94,7 +94,7 @@ Explanation of ContScout parameters:
   - **-t/ --temp** #location of the temporary folder. 
   - **-a/ -aligner-** #algorithm to be used for database lookup (mmseqs or diamond)
 
-Run test example for the unpatient (assuming locally installed tool, placed in search path):
+*Run test example for the impatient* (assuming locally installed tool, placed in search path):
 
 >cd #enter your home folder  
 >mkdir test  
