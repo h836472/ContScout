@@ -95,7 +95,7 @@ Explanation of ContScout parameters:
   - **-a/ -aligner-** #algorithm to be used for database lookup (mmseqs or diamond)
 
 Run test example for the unpatient (assuming locally installed tool, placed in search path):
-
+*
 >cd #enter your home folder  
 >mkdir test  
 >mkdir test/query  
@@ -106,7 +106,7 @@ Run test example for the unpatient (assuming locally installed tool, placed in s
 >wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/146/045/GCF_000146045.2_R64/GCF_000146045.2_R64_protein.faa.gz >test/query/protein_seq/GCF_000146045.2_R64_protein.faa.gz  
 >wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/146/045/GCF_000146045.2_R64/GCF_000146045.2_R64_genomic.gff.gz >test/query/annotation_data/GCF_000146045.2_R64_genomic.gff.gz  
 >ContScout -u ~/test/database -d swissprot -i ~/test/query/ -q 559292 -t /tmp 
-
+*
 **Explanation of the output folders**    
   
 
