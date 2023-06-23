@@ -122,10 +122,10 @@ Indicators of the analysis failing at a particular taxon level:
 -in extreme cases, a large fraction of query proteins might appear tagged for removal either exclusively in CtgProtDrop or both in CtgProtDrop and CtgProtDrop columns.
 
 Indicators of the reliable analysis results:   
--MedRLE values remaining high (>10) for each taxon level
--Few mixed taxon between keeped and dropped protein groups. The vast majority of mixed proteins remain in the host section.
--Similar values at IndivProtDrop and CtgProtDrop columns, with Jaccard value being close to 1, indicating good agreement between the individual protein tags and contig-based calls
--Same CtgProtDrop values across multiple consecutive taxon levels
+-MedRLE values remaining high (>10) for each taxon level  
+-Few mixed taxon between keeped and dropped protein groups. The vast majority of mixed proteins remain in the host section.  
+-Similar values at IndivProtDrop and CtgProtDrop columns, with Jaccard value being close to 1, indicating good agreement between the individual protein tags and contig-based calls  
+-Same CtgProtDrop values across multiple consecutive taxon levels  
   
   
 
