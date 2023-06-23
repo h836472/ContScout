@@ -123,8 +123,8 @@ Indicators of the analysis failing at a particular taxon level:
 
 Indicators of the reliable analysis results:   
 - MedRLE values remaining high (>10) for each taxon level  
-- few mixed taxon between keeped and dropped protein groups. The vast majority of mixed proteins remain in the host section.  
-- similar values at IndivProtDrop and CtgProtDrop columns, with Jaccard value being close to 1, indicating good agreement between the individual protein tags and contig-based calls  
+- few mixed taxon appearing between kept and dropped protein groups. If there is taxon mix, the vast majority of mixed-tag proteins remain in the *host* section.  
+- similar values appear at IndivProtDrop and CtgProtDrop columns, with the Jaccard value being close to 1, indicating good agreement between the individual protein tags and contig-based calls  
 - similar CtgProtDrop values appearing across multiple consecutive taxon levels  
   
   
