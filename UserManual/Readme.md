@@ -115,7 +115,7 @@ The core assumption behind ContScout is that true contamination is organized int
 **Important to note:**  
 Depending on the reference database, the number of closely related sequences at a fine-grade taxon level could be low. In such case, the top hits of some genuine host proteins might apper from syster clades instead of the expected taxon. Currently, ContScout handles any taxon mismatch as potential contamination thus for an "exotic" genome without sufficient taxon support in the database, eventually the entire genome could be marked for disposal at the finest taxon levels. Care must be taken by the user to decide, which is the highest taxon level that is feasible for a particular host organism and reference database combination.
 
-Columns NumMixedTag, MixedTagProtsDropByCtg MixedTagProtsKeptByCtg can help evaluating such situations.
+Columns *NumMixedTag*, *MixedTagProtsDropByCtg* *MixedTagProtsKeptByCtg* can help evaluating such situations.
 
 Also, it is important to note changes in the MedRLE column that informs the user about the median number of reads supportin individual protein calls at each taxon level. Values lower than ~3 at fine taxon levels are good indication of a decreasing taxon sampling, that can affect the prediction performance of the tool.
   
