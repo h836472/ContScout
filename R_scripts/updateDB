@@ -453,15 +453,25 @@ if(update_is_needed(db=what,crc=info.crc,udir=opt[["userdir"]]))
 {
 info.data=(xmlParse(paste0("tmp/",timestamp,"/",info_outfile)))
 info.data=do.call(paste, as.list(capture.output(info.data)))
-if(what%in%c("uniref90","uniref100"))
+if(what==("uniref90")
 {
 info.data.decode=list()
-info.data.decode[["unirefXX.fasta.gz"]]=list()
-info.data.decode[["unirefXX.fasta.gz"]][["version"]]=gsub("^.+<version>","",gsub("</version>.+$","",info.data))
-info.data.decode[["unirefXX.fasta.gz"]][["md5"]]=gsub("^.+>","",gsub("</hash>.+$","",gsub("^.+<file name=\"unirefXX.fasta.gz\">","",info.data)))
-info.data.decode[["unirefXX.fasta.gz"]][["size"]]=gsub("^.+>","",gsub("</size>.+$","",gsub("^.+<file name=\"unirefXX.fasta.gz\">","",info.data)))
-info.data.decode[["unirefXX.fasta.gz"]][["command"]]=gsub(info_outfile,"unirefXX.fasta.gz",info.download.cmd)
-}else if (what=="uniprotKB")
+info.data.decode[["uniref90.fasta.gz"]]=list()
+info.data.decode[["uniref90.fasta.gz"]][["version"]]=gsub("^.+<version>","",gsub("</version>.+$","",info.data))
+info.data.decode[["uniref90.fasta.gz"]][["md5"]]=gsub("^.+>","",gsub("</hash>.+$","",gsub("^.+<file name=\"uniref90.fasta.gz\">","",info.data)))
+info.data.decode[["uniref90.fasta.gz"]][["size"]]=gsub("^.+>","",gsub("</size>.+$","",gsub("^.+<file name=\"uniref90.fasta.gz\">","",info.data)))
+info.data.decode[["uniref90.fasta.gz"]][["command"]]=gsub(info_outfile,"uniref90.fasta.gz",info.download.cmd)
+}
+else if(what=="uniref100")
+{
+info.data.decode=list()
+info.data.decode[["uniref100.fasta.gz"]]=list()
+info.data.decode[["uniref100.fasta.gz"]][["version"]]=gsub("^.+<version>","",gsub("</version>.+$","",info.data))
+info.data.decode[["uniref100.fasta.gz"]][["md5"]]=gsub("^.+>","",gsub("</hash>.+$","",gsub("^.+<file name=\"uniref100.fasta.gz\">","",info.data)))
+info.data.decode[["uniref100.fasta.gz"]][["size"]]=gsub("^.+>","",gsub("</size>.+$","",gsub("^.+<file name=\"uniref100.fasta.gz\">","",info.data)))
+info.data.decode[["uniref100.fasta.gz"]][["command"]]=gsub(info_outfile,"uniref100.fasta.gz",info.download.cmd)
+}
+else if (what=="uniprotKB")
 {
 info.data.decode=list()
 info.data.decode[["uniprot_sprot.fasta.gz"]]=list()
