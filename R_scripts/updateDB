@@ -592,7 +592,7 @@ break
 fchar=substr(chunk,1,1)
 headers=fchar==">"
 nprot=sum(headers)
-taxchunk=matrix(scan(tax_con,n=nprot*2,what="char"),ncol=2,byrow=T,na.strings="nincsilyenszandekosan")
+taxchunk=matrix(scan(tax_con,n=nprot*2,what="char",na.strings="nincsilyenszandekosan"),ncol=2,byrow=T)
 
 old_names=chunk[headers]
 taxchunk[,2]=gsub("NA","t32644",taxchunk[,2])
