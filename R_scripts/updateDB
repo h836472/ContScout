@@ -23,7 +23,9 @@ option_list = list(
   make_option(c("-i", "--info"), type="character", default="https://docs.google.com/spreadsheets/d/1_FPaAnyHVUhHzV8gwic2X3RKaN9vSl9jcTN_50T7X24", 
               help="Path to local database repository folder", metavar="info"),
   make_option(c("-l", "--list_databases"), action="store_true", default=FALSE,
-              help="List pre-formatted databases stored in the local database repository."),
+              help="List pre-formatted databases stored in the local database repository."),  
+  make_option(c("-f", "--force"), action="store_true", default=FALSE, 
+              help="Force database update despite low disk space."),
   make_option(c("-c", "--cpu"), type="character", default="all", 
               help="Number of CPUs to use", metavar="cpu"),
   make_option(c("-d", "--dbname"), type="character", default=NULL,help="Name of the database to be used as a reference",metavar="dbname"));
@@ -381,7 +383,7 @@ open(fasta_con,open="r")
 while(TRUE)
 {
 start=Sys.time()
-chunk=scan(fasta_con,n=2000000,what="char",sep="\t",quote="") 
+chunk=scan(fasta_con,n=2000000,what="char",sep="\t",quote="",na.strings="nincsilyenszandekosan") 
 if(length(chunk)==0)
 {
 break
@@ -559,8 +561,9 @@ info(paste0("Latest version of database ",'"',what,'"'," is already installed.")
 
 import_custom_set=function(x)
 {
+#expected format:  custom:name:fasta_file
 x.s=unlist(strsplit(x,":"))
-fasta.file=list.files(pattern="fasta$",x.s[[3]],full.name=T)
+fasta.file=x.s[[3]]
 taxid.file=gsub("\\.fasta$",".tax",fasta.file)
 if(!file.exists(fasta.file)&&file.exists(taxid.file))
 {
@@ -580,7 +583,7 @@ timestamp=paste0(x.s[[2]],"_",format(Sys.time(),"%Y%m%d%H%M"))
 while(TRUE)
 {
 start=Sys.time()
-chunk=scan(fasta_con,n=2000000,what="char",sep="\t",quote="") 
+chunk=scan(fasta_con,n=2000000,what="char",sep="\t",quote="",na.strings="nincsilyenszandekosan") 
 if(length(chunk)==0)
 {
 break
@@ -589,13 +592,12 @@ break
 fchar=substr(chunk,1,1)
 headers=fchar==">"
 nprot=sum(headers)
-taxchunk=scan(tax_con,n=nprot,what="char",sep="\t",quote="") 
-taxchunk=grep("^$",taxchunk,invert=T,value=T)
+taxchunk=matrix(scan(tax_con,n=nprot*2,what="char"),ncol=2,byrow=T,na.strings="nincsilyenszandekosan")
 
 old_names=chunk[headers]
-taxchunk=gsub("NA","t32644",taxchunk)
+taxchunk[,2]=gsub("NA","t32644",taxchunk[,2])
 old_names.t=do.call(rbind,lapply(old_names,function(x) {d=unlist(strsplit(x," "));d_rest=paste(d[-1],collapse=" ");return(c(d[1],d_rest))}))
-new_names=paste0(old_names.t[,1],":t",taxchunk," ",old_names.t[,2])
+new_names=paste0(old_names.t[,1],":t",taxchunk[,2]," ",old_names.t[,2])
 new_names=gsub("\\|","_",new_names)
 chunk[headers]=new_names
 if(!dir.exists(paste0("tmp/",timestamp)))
@@ -673,7 +675,7 @@ if(!dir.exists("tmp"))
 dbd.df=system(paste0("df -P ",opt[["userdir"]]," -B 1G ",opt[["userdir"]]),intern=T)[2]
 dbd.dfv=unlist(strsplit(dbd.df," +"))
 dbd.free=as.numeric(dbd.dfv[[4]])
-if(!dbd.free>=500)
+if(!opt[["force"]]&!dbd.free>=500)
 {
 byedie(paste0("There seems to be less than 500 GB free space in folder ",opt[["userdir"]],"!\n"))
 }
