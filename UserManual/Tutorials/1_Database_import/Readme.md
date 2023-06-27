@@ -3,11 +3,11 @@ ContScout relies on a taxon-aware reference database that is used to tag individ
 **List of supported external databases:**  
 -nr (NCBI)  
 -refseq (NCBI)  
--swissprot (NCBI, for testing only)  
+-swissprot (NCBI, for testing / tutorial purposes only)  
 -uniprotKB(EBI)   
 -uniref90 (EBI)  
 -uniref100 (EBI)  
--uniprotSP (EBI, for testing only)
+-uniprotSP (EBI, for testing / tutorial purposes only)
 
 **Install the software**  
 *#create your project directory*  
