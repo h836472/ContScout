@@ -80,6 +80,7 @@ Explanation of ContScout parameters:
   - **-u / --userdir** #path to the folder, where the local reference database is stored
   - **-U / --unknown** #shall the tool keep or drop contigs that can not be tagged (mixed signal, unknown proteins). Default: keep
   - **-c / --cpu** #number of CPU-s to use (affects mainly the alignment step)
+  - **-C / --consensus** #fraction of votes needed to call a consensus taxon tag on a contig. Default: 0.5. Range: 0.5-0.9999
   - **-w / --what** #main project name [default: name derived from NCBI taxonID]
   - **-d / --dbname** #name of the pre-formatted database to be used (within the user folder)
   - **-i / --inputdir** #path to input directory with the query data (contains subfolders *protein_seq* and *annotation_data*)
