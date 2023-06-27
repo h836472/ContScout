@@ -28,10 +28,10 @@ Pre-requisites for a native installation
 * jacksum (tested with v3.5.0) 
 
 (2) as **locally built Docker image**, created from the docker file provided at GitHub (Recommended for advanced users / developers)  
-> mkdir ~/CS_install
-> cd ~/CS_install
-> git clone https://github.com/h836472/ContScout.git
-> cd ContScout/DockerScript/
+> mkdir ~/CS_install  
+> cd ~/CS_install  
+> git clone https://github.com/h836472/ContScout.git  
+> cd ContScout/DockerScript/  
 > docker build ./ --tag contscout:latest> --build-arg CACHEBUST=$(data+%s)
 Please allow 40-60 minutes of compilation time.
 
