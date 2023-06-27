@@ -1,5 +1,0 @@
-Output folders
-Saccharomyces_cerevisiae_S288C_tax_559292_21Jun_2023_20_01
-diag_data
-filtered_outputs
-R_saved_objects
