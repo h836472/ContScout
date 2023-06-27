@@ -27,7 +27,7 @@ docker pull h836472/contscout:latest
 >  
 >#c., **Docker, compile for yourself** (for experienced users, takes 40-60 minutes)    
 >git clone https://github.com/h836472/ContScout.git  
->cd ContScout/DockerScript
+>cd ContScout/DockerScript  
 >docker build ./ --tag contscout:demo
 >  
 >#d., install pre-requisites and scripts directly on your server (See User Manual, this option is not covered in the Tutorial)
