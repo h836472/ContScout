@@ -34,4 +34,13 @@ docker pull h836472/contscout:latest
 **Set up reference databases**
 >cd ~/CS_dir  
 >mkdir databases  
->singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -d swissprot  
+>singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -d swissprot
+
+If you have less than 500 GB free space in your project directory, the tool will quit with error. For testing, you can disable this test by adding the -f (--force) flag to the command. Using this flag while setting up a real database is not recommended.
+
+>singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -f swissprot  
+
+Please note that even the demo / swissprot database creation will take several minutes to complete. Comprehensive databases, such as nr, refseq, uniprotKB will take several hours to download and pre-format.
+
+
+
