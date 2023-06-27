@@ -15,18 +15,18 @@ ContScout relies on a taxon-aware reference database that is used to tag individ
 >mkdir CS_dir  
 >cd CS_dir
 
-**#install ContScout using one of the options below**
+*#install ContScout using one of the options below*
 
->#a., Singularity, get pre-built package (recommended, assumed throughout the tutorial)
+>#a., **Singularity**, get pre-built package (recommended, assumed throughout the tutorial)
 >mkdir ~/CS_dir/singularity_image
 >cd ~/CS_dir/singularity_image
 >singularity build contscout_latest.sif docker://h836472/contscout:latest
 >cd ~/CS_dir/  
 >
->#b., Docker, get pre-built package (recommended)    
+>#b., **Docker**, get pre-built package (recommended)    
 docker pull h836472/contscout:latest
 >  
->#c., Docker, compile for yourself (for experienced users, takes 40-60 minutes)    
+>#c., **Docker, compile for yourself** (for experienced users, takes 40-60 minutes)    
 >git clone https://github.com/h836472/ContScout.git  
 >cd ContScout/DockerScript
 >docker build ./ --tag contscout:demo
