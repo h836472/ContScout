@@ -11,7 +11,15 @@ List of supported external databases:
 
 To save time on the, we will download the "swissprot" database from NCBI but please remember: this is a small, human-curated database with extremely week taxon representation. Real analysis should not be performed with this database or the EBI-provided uniprotSP.
 
->get to your home directory
+>#get to your home directory, create a working directory
+>cd
+>mkdir CS_dir
+>cd CS_dir
+>#install ContScout using one of the options below. Preferred one is "option c, singularity"
+>#a. Docker, compile for yourself (experienced user, takes 40-60 minutes),
+>git clone https://github.com/h836472/ContScout.git
+>cd ContScout/DockerScript
+>
 
 
 updateDB -u <user_folder> -n <database_name>
