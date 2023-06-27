@@ -23,11 +23,13 @@ ContScout relies on a taxon-aware reference database that is used to tag individ
 >cd ~/CS_dir/  
 >
 >#b., Docker, get pre-built package (recommended)    
-docker pull h836472/contscout:latest  
+docker pull h836472/contscout:latest
+>  
 >#c., Docker, compile for yourself (for experienced users, takes 40-60 minutes)    
 >git clone https://github.com/h836472/ContScout.git  
 >cd ContScout/DockerScript
->docker build ./ --tag contscout:demo  
+>docker build ./ --tag contscout:demo
+>  
 >#d., install pre-requisites and scripts directly on your server (See User Manual, this option is not covered in the Tutorial)
 
 **Set up databases**
