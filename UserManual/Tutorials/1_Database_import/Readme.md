@@ -46,7 +46,7 @@ Please note that even the demo / swissprot database creation will take several m
 
 Users have the option to import their own custom database from a local file. To enable this feature, a fasta file and a matching taxonomy mapping file need to be created.
 
-**Fasta format example:**
+**Fasta format example:**  
 \>P69739|MBHS_ECOLI
 MNNEETFYQAMRRQGVTRRSFLKYCSLAATSLGLGAGMAPKIAWALENKPRIPVVWIHGL
 ECTCCTESFIRSAHPLAKDVILSLISLDYDDTLMAAAGTQAEEVFEDIITQYNGKYILAV
@@ -55,6 +55,7 @@ KVITDKPIIKVPGCPPIPDVMSAIITYMVTFDRLPDVDRMGRPLMFYGQRIHDKCYRRAH
 FDAGEFVQSWDDDAARKGYCLYKMGCKGPTTYNACSSTRWNDGVSFPIQSGHGCLGCAEN
 GFWDRGSFYSRVVDIPQMGTHSTADTVGLTALGVVAAAVGVHAVASAVDQRRRHNQQPTE
 TEHQPGNEDKQA  
+  
 **Taxon mapping file example:**
 P69739|MBHS_ECOLI\t83333
 
