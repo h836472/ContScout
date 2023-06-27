@@ -145,7 +145,7 @@ DBinfo=read.table(opt[["info"]],sep=",",as.is=T,row.name=1,header=T)
 DBinfo=data.frame(DBinfo,stringsAsFactors=F)
 rownames(DBinfo)=DBinfo[,"DB_Name"]
 
-if((!grepl("^custom:.+:/.+$",opt[["dbname"]]))&& (! opt[["dbname"]]%in% rownames(DBinfo)))
+if((!grepl("^custom:.+:/.+$",opt[["dbname"]]))&& (!("ncbi_taxonomy"%in%rownames(DBinfo) && opt[["dbname"]]%in% rownames(DBinfo))))
 {
 byedie(paste0("Database \'",opt[["dbname"]],"\' is not recognized. Please consult the manual for possible fixes of this error!\n"))
 }
