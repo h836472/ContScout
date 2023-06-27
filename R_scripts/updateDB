@@ -692,7 +692,7 @@ dl.ncbi_blastdb(what=opt[["dbname"]])
 dl.uniprot(what=opt[["dbname"]])
 }else if(opt[["dbname"]]=="ncbi_taxonomy"){
 dl.ncbi_tax()
-}else if(grepl("^custom:.+:/",opt[["dbname"]],ignore.case=T))
+}else if(grepl("^custom:.+:~*/",opt[["dbname"]],ignore.case=T))
 {
 import_custom_set(opt[["dbname"]])
 }else
