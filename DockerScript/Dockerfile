@@ -1,5 +1,5 @@
 #docker build ./ --tag h836472/contscout:latest
-FROM ubuntu:latest
+FROM debian:latest
 WORKDIR /data
 RUN apt-get update 
 RUN apt-get install --yes    \
