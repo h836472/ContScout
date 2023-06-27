@@ -69,4 +69,5 @@ Example:
 >singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -d custom\:demoDB\:\~/CS_dir/customDB/demoDB.fasta
   
 If you have less than 500 GB free space in your project directory, the tool will quit with error. For testing, you can disable this test by adding the -f (--force) flag to the command. Using this flag while setting up a real database is not recommended.
+>singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -d custom\:demoDB\:\~/CS_dir/customDB/demoDB.fasta -f
 
