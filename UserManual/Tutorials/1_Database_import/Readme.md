@@ -10,7 +10,7 @@ ContScout relies on a taxon-aware reference database that is used to tag individ
 -uniprotSP (EBI, for testing only)
 
 **Install the software**  
->*#create a working directory*
+*#create a working directory*  
 >cd  
 >mkdir CS_dir  
 >cd CS_dir  
