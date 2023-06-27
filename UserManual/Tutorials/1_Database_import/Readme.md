@@ -11,9 +11,8 @@ ContScout relies on a taxon-aware reference database that is used to tag individ
 
 **Install the software**  
 *#create your project directory*  
->cd  
->mkdir CS_dir  
->cd CS_dir
+>mkdir ~/CS_dir  
+>cd ~/CS_dir
 
 *#install ContScout using one of the options below*
 
