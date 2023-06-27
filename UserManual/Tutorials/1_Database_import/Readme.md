@@ -32,6 +32,6 @@ docker pull h836472/contscout:latest
 >#d., install pre-requisites and scripts directly on your server (See User Manual, this option is not covered in the Tutorial)
 
 **Set up reference databases**
->cd ~/CS_dir
->mkdir databases
->singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -d swissprot
+>cd ~/CS_dir  
+>mkdir databases  
+>singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -d swissprot  
