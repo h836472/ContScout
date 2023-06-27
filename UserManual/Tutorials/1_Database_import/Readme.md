@@ -38,7 +38,7 @@ docker pull h836472/contscout:latest
 
 If you have less than 500 GB free space in your project directory, the tool will quit with error. For testing, you can disable this test by adding the -f (--force) flag to the command. Using this flag while setting up a real database is not recommended.
 
->singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -f swissprot  
+>singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -f -d swissprot  
 
 Please note that even the demo / swissprot database creation will take several minutes to complete. Comprehensive databases, such as nr, refseq, uniprotKB will take several hours to download and pre-format.
 
@@ -57,6 +57,14 @@ GFWDRGSFYSRVVDIPQMGTHSTADTVGLTALGVVAAAVGVHAVASAVDQRRRHNQQPTE
 TEHQPGNEDKQA  
   
 **Taxon mapping file example: (file:customDB.tax)**  
-P69739|MBHS_ECOLI\t83333
+P69739|MBHS_ECOLI\t83333  
 
+Example:
+
+>cd ~/CS_dir
+>mkdir customDB
+>cd customDB
+>wget -c https://github.com/h836472/ContScout/raw/main/UserManual/Tutorials/TutorialExampleData/demoDB_for_import.tar.gz 
+>tar -xvf demoDB_for_import.tar.gz
+>singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -d custom:demoDB:~/CS_dir/customDB/demoDB.fasta
 
