@@ -1,6 +1,6 @@
 ContScout relies on a taxon-aware reference database that is used to tag individual proteins using a speed-optimized search tool (MMSeqs or DIAMOND). The "updateDB" tool, included in the software package handles all file import and pre-formatting steps. Public sequence databases from the Internet as well as user-provided local databases can be used as reference. 
 
-**List of supported external databases:**
+**List of supported external databases:**  
 -nr (NCBI)  
 -refseq (NCBI)  
 -swissprot (NCBI, for testing only)  
