@@ -31,7 +31,7 @@ docker pull h836472/contscout:latest
 >  
 >#d., install pre-requisites and scripts directly on your server (See User Manual, this option is not covered in the Tutorial)
 
-**Set up reference databases**
+**Set up reference databases - test with swissprot**
 >cd ~/CS_dir  
 >mkdir databases  
 >singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -d swissprot
@@ -42,5 +42,20 @@ If you have less than 500 GB free space in your project directory, the tool will
 
 Please note that even the demo / swissprot database creation will take several minutes to complete. Comprehensive databases, such as nr, refseq, uniprotKB will take several hours to download and pre-format.
 
+**Set up reference databases - import a custom database from a local file**
+
+Users have the option to import their own custom database from a local file. To enable this feature, a fasta file and a matching taxonomy mapping file need to be created.
+
+**Fasta format example:**
+>P69739|MBHS_ECOLI
+MNNEETFYQAMRRQGVTRRSFLKYCSLAATSLGLGAGMAPKIAWALENKPRIPVVWIHGL
+ECTCCTESFIRSAHPLAKDVILSLISLDYDDTLMAAAGTQAEEVFEDIITQYNGKYILAV
+EGNPPLGEQGMFCISSGRPFIEKLKRAAAGASAIIAWGTCASWGCVQAARPNPTQATPID
+KVITDKPIIKVPGCPPIPDVMSAIITYMVTFDRLPDVDRMGRPLMFYGQRIHDKCYRRAH
+FDAGEFVQSWDDDAARKGYCLYKMGCKGPTTYNACSSTRWNDGVSFPIQSGHGCLGCAEN
+GFWDRGSFYSRVVDIPQMGTHSTADTVGLTALGVVAAAVGVHAVASAVDQRRRHNQQPTE
+TEHQPGNEDKQA
+>**Taxon mapping file example:**
+P69739|MBHS_ECOLI\t83333
 
 
