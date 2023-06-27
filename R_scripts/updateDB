@@ -23,9 +23,7 @@ option_list = list(
   make_option(c("-i", "--info"), type="character", default="https://docs.google.com/spreadsheets/d/1_FPaAnyHVUhHzV8gwic2X3RKaN9vSl9jcTN_50T7X24", 
               help="Path to local database repository folder", metavar="info"),
   make_option(c("-l", "--list_databases"), action="store_true", default=FALSE,
-              help="List pre-formatted databases stored in the local database repository."),  
-  make_option(c("-f", "--force"), action="store_true", default=FALSE, 
-              help="Force database update despite low disk space."),
+              help="List pre-formatted databases stored in the local database repository."),
   make_option(c("-c", "--cpu"), type="character", default="all", 
               help="Number of CPUs to use", metavar="cpu"),
   make_option(c("-d", "--dbname"), type="character", default=NULL,help="Name of the database to be used as a reference",metavar="dbname"));
@@ -71,6 +69,10 @@ byedie(paste0("Please provide the path to your user directory (-u) containing th
 databases=list.files(opt[["userdir"]],pattern="\\.dbinfo",recursive=T,full.names=T)
 names(databases)=gsub("\\.dbinfo$","",gsub("^.+/","",databases))
 names(databases)=gsub("_",":",names(databases))
+if(length(databases)==0)
+{
+byedie(paste0("No reference database was found under ",'"',opt[["userdir"]],'"',".","Please check if the local directory is properly set.\nRemember, you can download and pre-format reference databases with ","'","UpdateDB",'"',".\n"))
+}
 dbdata=lapply(databases,function(x) readLines(x))
 
 #if -l switch is present, tool lists all configured reference databases and quits
@@ -145,7 +147,8 @@ DBinfo=read.table(opt[["info"]],sep=",",as.is=T,row.name=1,header=T)
 DBinfo=data.frame(DBinfo,stringsAsFactors=F)
 rownames(DBinfo)=DBinfo[,"DB_Name"]
 
-if((!grepl("^custom:.+:/.+$",opt[["dbname"]]))&& (!("ncbi_taxonomy"%in%rownames(DBinfo) && opt[["dbname"]]%in% rownames(DBinfo))))
+
+if((!grepl("^custom:.+:/.+$",opt[["dbname"]]) && opt[["dbname"]]%in% rownames(DBinfo))
 {
 byedie(paste0("Database \'",opt[["dbname"]],"\' is not recognized. Please consult the manual for possible fixes of this error!\n"))
 }
@@ -383,7 +386,7 @@ open(fasta_con,open="r")
 while(TRUE)
 {
 start=Sys.time()
-chunk=scan(fasta_con,n=2000000,what="char",sep="\t",quote="",na.strings="nincsilyenszandekosan") 
+chunk=scan(fasta_con,n=2000000,what="char",sep="\t",quote="") 
 if(length(chunk)==0)
 {
 break
@@ -455,16 +458,7 @@ if(update_is_needed(db=what,crc=info.crc,udir=opt[["userdir"]]))
 {
 info.data=(xmlParse(paste0("tmp/",timestamp,"/",info_outfile)))
 info.data=do.call(paste, as.list(capture.output(info.data)))
-if(what=="uniref90")
-{
-info.data.decode=list()
-info.data.decode[["uniref90.fasta.gz"]]=list()
-info.data.decode[["uniref90.fasta.gz"]][["version"]]=gsub("^.+<version>","",gsub("</version>.+$","",info.data))
-info.data.decode[["uniref90.fasta.gz"]][["md5"]]=gsub("^.+>","",gsub("</hash>.+$","",gsub("^.+<file name=\"uniref90.fasta.gz\">","",info.data)))
-info.data.decode[["uniref90.fasta.gz"]][["size"]]=gsub("^.+>","",gsub("</size>.+$","",gsub("^.+<file name=\"uniref90.fasta.gz\">","",info.data)))
-info.data.decode[["uniref90.fasta.gz"]][["command"]]=gsub(info_outfile,"uniref90.fasta.gz",info.download.cmd)
-}
-else if(what=="uniref100")
+if(what=="uniref100")
 {
 info.data.decode=list()
 info.data.decode[["uniref100.fasta.gz"]]=list()
@@ -472,8 +466,7 @@ info.data.decode[["uniref100.fasta.gz"]][["version"]]=gsub("^.+<version>","",gsu
 info.data.decode[["uniref100.fasta.gz"]][["md5"]]=gsub("^.+>","",gsub("</hash>.+$","",gsub("^.+<file name=\"uniref100.fasta.gz\">","",info.data)))
 info.data.decode[["uniref100.fasta.gz"]][["size"]]=gsub("^.+>","",gsub("</size>.+$","",gsub("^.+<file name=\"uniref100.fasta.gz\">","",info.data)))
 info.data.decode[["uniref100.fasta.gz"]][["command"]]=gsub(info_outfile,"uniref100.fasta.gz",info.download.cmd)
-}
-else if (what=="uniprotKB")
+}else if (what=="uniprotKB")
 {
 info.data.decode=list()
 info.data.decode[["uniprot_sprot.fasta.gz"]]=list()
@@ -561,9 +554,8 @@ info(paste0("Latest version of database ",'"',what,'"'," is already installed.")
 
 import_custom_set=function(x)
 {
-#expected format:  custom:name:fasta_file
 x.s=unlist(strsplit(x,":"))
-fasta.file=x.s[[3]]
+fasta.file=list.files(pattern="fasta$",x.s[[3]],full.name=T)
 taxid.file=gsub("\\.fasta$",".tax",fasta.file)
 if(!file.exists(fasta.file)&&file.exists(taxid.file))
 {
@@ -583,7 +575,7 @@ timestamp=paste0(x.s[[2]],"_",format(Sys.time(),"%Y%m%d%H%M"))
 while(TRUE)
 {
 start=Sys.time()
-chunk=scan(fasta_con,n=2000000,what="char",sep="\t",quote="",na.strings="nincsilyenszandekosan") 
+chunk=scan(fasta_con,n=2000000,what="char",sep="\t",quote="") 
 if(length(chunk)==0)
 {
 break
@@ -592,12 +584,13 @@ break
 fchar=substr(chunk,1,1)
 headers=fchar==">"
 nprot=sum(headers)
-taxchunk=matrix(scan(tax_con,n=nprot*2,what="char",na.strings="nincsilyenszandekosan"),ncol=2,byrow=T)
+taxchunk=scan(tax_con,n=nprot,what="char",sep="\t",quote="") 
+taxchunk=grep("^$",taxchunk,invert=T,value=T)
 
 old_names=chunk[headers]
-taxchunk[,2]=gsub("NA","t32644",taxchunk[,2])
+taxchunk=gsub("NA","t32644",taxchunk)
 old_names.t=do.call(rbind,lapply(old_names,function(x) {d=unlist(strsplit(x," "));d_rest=paste(d[-1],collapse=" ");return(c(d[1],d_rest))}))
-new_names=paste0(old_names.t[,1],":t",taxchunk[,2]," ",old_names.t[,2])
+new_names=paste0(old_names.t[,1],":t",taxchunk," ",old_names.t[,2])
 new_names=gsub("\\|","_",new_names)
 chunk[headers]=new_names
 if(!dir.exists(paste0("tmp/",timestamp)))
@@ -675,7 +668,7 @@ if(!dir.exists("tmp"))
 dbd.df=system(paste0("df -P ",opt[["userdir"]]," -B 1G ",opt[["userdir"]]),intern=T)[2]
 dbd.dfv=unlist(strsplit(dbd.df," +"))
 dbd.free=as.numeric(dbd.dfv[[4]])
-if(!opt[["force"]]&!dbd.free>=500)
+if(!dbd.free>=500)
 {
 byedie(paste0("There seems to be less than 500 GB free space in folder ",opt[["userdir"]],"!\n"))
 }
@@ -684,7 +677,7 @@ byedie(paste0("There seems to be less than 500 GB free space in folder ",opt[["u
 if(opt[["dbname"]]%in%c("nr","refseq","swissprot"))
 {
 dl.ncbi_blastdb(what=opt[["dbname"]])
-}else if(opt[["dbname"]]%in%c("uniref90","uniref100","uniprotKB","uniprotSP")){
+}else if(opt[["dbname"]]%in%c("uniref100","uniprotKB","uniprotSP")){
 dl.uniprot(what=opt[["dbname"]])
 }else if(opt[["dbname"]]=="ncbi_taxonomy"){
 dl.ncbi_tax()
