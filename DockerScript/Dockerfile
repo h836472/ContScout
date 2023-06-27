@@ -88,7 +88,7 @@ ARG CACHEBUST=1
 #ADD ContScout Downloader and main scripts
 ADD "https://github.com/h836472/ContScout/raw/main/R_scripts/ContScout" skipcache
 ADD "https://github.com/h836472/ContScout/raw/main/R_scripts/updateDB" skipcache
-RUN wget https://github.com/h836472/ContScout/raw/main/R_scripts/ContScout &&\\
+RUN wget https://github.com/h836472/ContScout/raw/main/R_scripts/ContScout &&\
 mv ContScout /usr/bin/ContScout && chmod a+x /usr/bin/ContScout
-RUN wget https://github.com/h836472/ContScout/raw/main/R_scripts/updateDB &&\\
+RUN wget https://github.com/h836472/ContScout/raw/main/R_scripts/updateDB &&\
 mv updateDB /usr/bin/updateDB&& chmod a+x /usr/bin/updateDB
