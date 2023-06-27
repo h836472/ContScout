@@ -10,12 +10,12 @@ ContScout relies on a taxon-aware reference database that is used to tag individ
 -uniprotSP (EBI, for testing only)
 
 **Install the software**  
-*#create a working directory*  
+*#create your project directory*  
 >cd  
 >mkdir CS_dir  
 >cd CS_dir  
->  
->#install ContScout using one of the options below. Preferred one is "option c, singularity"  
+**#install ContScout using one of the options below**
+
 >#a., Singularity, get pre-built package (recommended, assumed throughout the tutorial)
 >mkdir ~/CS_dir/singularity_image
 >cd ~/CS_dir/singularity_image
