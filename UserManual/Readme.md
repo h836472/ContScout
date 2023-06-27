@@ -54,6 +54,7 @@ You can check the command line parameters of the tool from Docker / Singularity
 
 **Command line options for updateDB**
 - **-h / --help** #displays help message
+- **-f / --force** #forces updateDB to run even with  less than 500GB free storage space available
 - **-u / --userdir** #user directory. This is the location to store the local database copy.  
 - **-c / --cpu**  #number of CPU-s to use (affects mainly the alignment step)  
 - **-t / --tempdir** #Directory to write temporary files while installing a database.  
