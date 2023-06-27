@@ -28,29 +28,29 @@ Pre-requisites for a native installation
 * jacksum (tested with v3.5.0) 
 
 (2) as **locally built Docker image**, created from the docker file provided at GitHub (Recommended for advanced users / developers)  
-* mkdir ~/CS_install
-* cd ~/CS_install
-* git clone https://github.com/h836472/ContScout.git
-* cd ContScout/DockerScript/
-* docker build ./ --tag contscout:latest> --build-arg CACHEBUST=$(data+%s)
+> mkdir ~/CS_install
+> cd ~/CS_install
+> git clone https://github.com/h836472/ContScout.git
+> cd ContScout/DockerScript/
+> docker build ./ --tag contscout:latest> --build-arg CACHEBUST=$(data+%s)
 Please allow 40-60 minutes of compilation time.
 
 (3) ready-to-use (binary) **Singularity image**, obtained from DockerHub
-* mkdir ~/CS_install
-* cd ~/CS_install
-* singularity build contscout_latest.sif docker://h836472/contscout:latest
+> mkdir ~/CS_install
+> cd ~/CS_install
+> singularity build contscout_latest.sif docker://h836472/contscout:latest
 
 (4)ready-to-use (binary) **Docker image**, obtained from DockerHub
-* mkdir ~/CS_install
-* cd ~/CS_install
-* docker pull h836472/contscout:latest
+> mkdir ~/CS_install
+> cd ~/CS_install
+> docker pull h836472/contscout:latest
 
 **Set up your local reference databases**
 
 The ContScout package contains an automated database updater tool called "updateDB" that fetches, labels and pre-formats public protein databases, such as uniref, nr or uniprotKB. Taxonomical labeling is based on the taxonomy database from NCBI.  
 You can check the command line parameters of the tool from Docker / Singularity
-* Docker: docker run h836472/contscout:latest updateDB -h
-* Singularity: singularity exec <cs_sif_file> updateDB -h
+> Docker: docker run h836472/contscout:latest updateDB -h
+> Singularity: singularity exec <cs_sif_file> updateDB -h
 
 **Command line options for updateDB**
 - **-h / --help** #displays help message
