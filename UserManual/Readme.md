@@ -14,7 +14,7 @@ External application as well as some ContScout components benefit from SMP multi
 
 ContScout can be installed by
   
-(1) *natively*, by downloading the two main scripts "updateDB" and "ContScout" after manually installing all pre-requisites. Please note that this is not recommended although authors can provide help with the local installation if needed. 
+(1) **natively**, by downloading the two main scripts "updateDB" and "ContScout" after manually installing all pre-requisites. Please note that this is not recommended although authors can provide help with the local installation if needed. 
 Pre-requisites for a native installation
 * python 3.x  
 * java (tested with openJDK 17)  
@@ -27,7 +27,7 @@ Pre-requisites for a native installation
 * MMSeqs (tested with version "25688290f126d7428155ad817e9809173fe78afd")
 * jacksum (tested with v3.5.0) 
 
-(2) as *locally built Docker image*, created from the docker file provided at GitHub (Recommended for advanced users / developers)  
+(2) as **locally built Docker image**, created from the docker file provided at GitHub (Recommended for advanced users / developers)  
 * mkdir ~/CS_install
 * cd ~/CS_install
 * git clone https://github.com/h836472/ContScout.git
@@ -35,22 +35,17 @@ Pre-requisites for a native installation
 * docker build ./ --tag contscout:latest> --build-arg CACHEBUST=$(data+%s)
 Please allow 40-60 minutes of compilation time.
 
-(3) ready-to-use (binary) Singularity image, obtained from DockerHub
+(3) ready-to-use (binary) **Singularity image**, obtained from DockerHub
 * mkdir ~/CS_install
 * cd ~/CS_install
 * singularity build contscout_latest.sif docker://h836472/contscout:latest
 
-(4)ready-to-use (binary) Docker image, obtained from DockerHub
+(4)ready-to-use (binary) **Docker image**, obtained from DockerHub
 * mkdir ~/CS_install
 * cd ~/CS_install
 * docker pull h836472/contscout:latest
 
-as a Docker / Singularity image, pulled from dockerhub (generally recommended installation method)  
-* Docker: docker pull h836472/contscout:latest
-* Singularity: singularity pull docker://h836472/contscout:latest
-(as a result of singularity pull, *contscout_latest.sif* file is generated. I will later refer to this file as "<cs_sif_file>".
-
-**Set up locally mirrored reference databases**
+**Set up your local reference databases**
 
 The ContScout package contains an automated database updater tool called "updateDB" that fetches, labels and pre-formats public protein databases, such as uniref, nr or uniprotKB. Taxonomical labeling is based on the taxonomy database from NCBI.  
 You can check the command line parameters of the tool from Docker / Singularity
