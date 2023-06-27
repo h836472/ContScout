@@ -35,15 +35,15 @@ Pre-requisites for a native installation
 > docker build ./ --tag contscout:latest> --build-arg CACHEBUST=$(data+%s)
 Please allow 40-60 minutes of compilation time.
 
-(3) ready-to-use (binary) **Singularity image**, obtained from DockerHub
-> mkdir ~/CS_install
-> cd ~/CS_install
-> singularity build contscout_latest.sif docker://h836472/contscout:latest
+(3) ready-to-use (binary) **Singularity image**, obtained from DockerHub  
+> mkdir ~/CS_install  
+> cd ~/CS_install  
+> singularity build contscout_latest.sif docker://h836472/contscout:latest  
 
-(4)ready-to-use (binary) **Docker image**, obtained from DockerHub
-> mkdir ~/CS_install
-> cd ~/CS_install
-> docker pull h836472/contscout:latest
+(4)ready-to-use (binary) **Docker image**, obtained from DockerHub  
+> mkdir ~/CS_install  
+> cd ~/CS_install  
+> docker pull h836472/contscout:latest  
 
 **Set up your local reference databases**
 
