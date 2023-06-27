@@ -9,29 +9,10 @@ ContScout relies on a taxon-aware reference database that is used to tag individ
 -uniref100 (EBI)  
 -uniprotSP (EBI, for testing / tutorial purposes only)
 
-**Install the software**  
-*#create your project directory*  
->mkdir ~/CS_dir  
-
-*#install ContScout using one of the options below*
-
->#a., **Singularity**, get pre-built package (recommended, assumed throughout the tutorial)  
->mkdir ~/CS_dir/singularity_image  
->cd ~/CS_dir/singularity_image  
->singularity build contscout_latest.sif docker://h836472/contscout:latest  
->cd ~/CS_dir/  
->
->#b., **Docker**, get pre-built package (recommended)    
-docker pull h836472/contscout:latest
->  
->#c., **Docker, compile for yourself** (for experienced users, takes 40-60 minutes)    
->git clone https://github.com/h836472/ContScout.git  
->cd ContScout/DockerScript  
->docker build ./ --tag contscout:demo
->  
->#d., install pre-requisites and scripts directly on your server (See User Manual, this option is not covered in the Tutorial)
-
 **Set up reference databases - test with swissprot**
+
+Prerequisite: please install ContScout. Consult the user manual for more details.  
+
 >cd ~/CS_dir  
 >mkdir databases  
 >singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -d swissprot
