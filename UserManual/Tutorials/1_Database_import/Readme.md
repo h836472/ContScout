@@ -13,7 +13,8 @@ ContScout relies on a taxon-aware reference database that is used to tag individ
 *#create your project directory*  
 >cd  
 >mkdir CS_dir  
->cd CS_dir  
+>cd CS_dir
+
 **#install ContScout using one of the options below**
 
 >#a., Singularity, get pre-built package (recommended, assumed throughout the tutorial)
