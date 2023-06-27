@@ -11,6 +11,10 @@ RUN apt-get install --yes    \
 RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata &&\
 apt-get install --yes libcurl4-openssl-dev libxml2-dev libssl-dev libmagick++-dev libcairo2-dev curl \
 liblzma-dev libblas-dev aptitude libreadline-dev openjdk-17-jre cmake ncbi-blast+ locales libharfbuzz-dev libfribidi-dev pigz
+RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
+    dpkg-reconfigure --frontend=noninteractive locales && \
+    update-locale LANG=en_US.UTF-8
+ENV LANG en_US.UTF-8 
 RUN ncpu=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}') &&\
 curl -O https://cran.rstudio.com/src/base/R-4/R-4.1.2.tar.gz &&\
 tar -xzvf R-4.1.2.tar.gz &&\
