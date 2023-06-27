@@ -66,5 +66,5 @@ Example:
 >cd customDB  
 >wget -c https://github.com/h836472/ContScout/raw/main/UserManual/Tutorials/TutorialExampleData/demoDB_for_import.tar.gz   
 >tar -xvf demoDB_for_import.tar.gz   
->singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -d custom:demoDB:~/CS_dir/customDB/demoDB.fasta   
+>singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -d custom\:demoDB\:\~/CS_dir/customDB/demoDB.fasta   
 
