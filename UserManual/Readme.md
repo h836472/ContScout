@@ -28,12 +28,24 @@ Pre-requisites for a native installation
 * jacksum (tested with v3.5.0) 
 
 (2) as a Docker image, locally built based on the docker file provided at GitHub (Recommended for advanced users / developers)  
+* mkdir ~/CS_install
+* cd ~/CS_install
 * git clone https://github.com/h836472/ContScout.git
 * cd ContScout/DockerScript/
-* docker build ./ -t <your_container_tag> --build-arg CACHEBUST=$(data+%s)
+* docker build ./ --tag contscout:latest> --build-arg CACHEBUST=$(data+%s)
 Please allow 40-60 minutes of compilation time.
 
-(3) as a Docker / Singularity image, pulled from dockerhub (generally recommended installation method)  
+(3) get the pre-built image for Singularity
+* mkdir ~/CS_install
+* cd ~/CS_install
+* singularity build contscout_latest.sif docker://h836472/contscout:latest
+
+(4) get the pre-build image for Docker
+* mkdir ~/CS_install
+* cd ~/CS_install
+* docker pull h836472/contscout:latest
+
+as a Docker / Singularity image, pulled from dockerhub (generally recommended installation method)  
 * Docker: docker pull h836472/contscout:latest
 * Singularity: singularity pull docker://h836472/contscout:latest
 (as a result of singularity pull, *contscout_latest.sif* file is generated. I will later refer to this file as "<cs_sif_file>".
