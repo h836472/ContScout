@@ -32,7 +32,7 @@ Pre-requisites for a native installation
 > cd ~/CS_install  
 > git clone https://github.com/h836472/ContScout.git  
 > cd ContScout/DockerScript/  
-> docker build ./ --tag contscout:latest> --build-arg CACHEBUST=$(data+%s)
+> docker build ./ --tag contscout:latest> --build-arg CACHEBUST=$(data+%s)  
 Please allow 40-60 minutes of compilation time.
 
 (3) ready-to-use (binary) **Singularity image**, obtained from DockerHub  
