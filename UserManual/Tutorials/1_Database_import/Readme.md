@@ -16,10 +16,10 @@ ContScout relies on a taxon-aware reference database that is used to tag individ
 
 *#install ContScout using one of the options below*
 
->#a., **Singularity**, get pre-built package (recommended, assumed throughout the tutorial)
->mkdir ~/CS_dir/singularity_image
->cd ~/CS_dir/singularity_image
->singularity build contscout_latest.sif docker://h836472/contscout:latest
+>#a., **Singularity**, get pre-built package (recommended, assumed throughout the tutorial)  
+>mkdir ~/CS_dir/singularity_image  
+>cd ~/CS_dir/singularity_image  
+>singularity build contscout_latest.sif docker://h836472/contscout:latest  
 >cd ~/CS_dir/  
 >
 >#b., **Docker**, get pre-built package (recommended)    
