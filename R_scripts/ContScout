@@ -1,5 +1,5 @@
 #!/usr/bin/Rscript
-
+#NC Revision#2 official version, 12th Sep 2023, 13:20
 byedie=function(x,log=TRUE,sure_q=TRUE) #set FALSE for development, TRUE for production
 {
 cat(x)
@@ -55,6 +55,8 @@ option_list = list(
               help="NCBI TaxonID for query", metavar="querytax"),
   make_option(c("-f", "--force"), action="store_true", default=FALSE, 
               help="Force the analysis despite inconsistencies between annotation file and fasta file."),
+  make_option(c("-G", "--genome_filter"), action="store_true", default=FALSE, 
+              help="Remove contaminants from genome too."),
   make_option(c("-r", "--reuse_abc"), action="store_true", default=FALSE,metavar="reuse_abc", 
               help="Reuse ABC file from previous run if possible."),
   make_option(c("-n", "--no_annot"), action="store_true", default=FALSE,  
@@ -77,23 +79,25 @@ if(FALSE)
 {
 #this section is placed to allow manually configured options, if needed for interactive run during development
 opt=list()
-opt[["aligner"]]="diamond" # -a 
-opt[["userdir"]]="/node7_data/balintb/databases_dev" #-u 
-opt[["cpu"]]=24 #-c 
-opt[["dbname"]]="nr" #-d 
-opt[["inputdir"]]="/node7_data/balintb/ContScout_Devilopment/CS_2023_june/Aspzo1_tax_1073090" # -i
+opt[["aligner"]]="mmseqs" # -a 
+opt[["userdir"]]="/work/balintb/databases_dev/" #-u 
+opt[["cpu"]]=34 #-c 
+opt[["dbname"]]="uniref100" #-d 
+opt[["inputdir"]]="/node7_data/balintb/ContScout_Revision/Revision#2/Effect_of_N/Salprose" # -i
 opt[["outdir"]]="./"
-opt[["querytax"]]=1073090 #-q 
+opt[["querytax"]]=946362 #-q 
 opt[["force"]]=FALSE
 opt[["reuse_abc"]]=TRUE #-r
 opt[["no_annot"]]=FALSE
 opt[["sensM"]]=2 #-s 2
 opt[["sensD"]]="fast" #-S fast
-opt[["memlimit"]]="150G" #-m 150G
+opt[["memlimit"]]="600G" #-m 150G
 opt[["list_databases"]]=FALSE #
 opt[["pci"]]=20 #-p 20
-opt[["tmpdir"]]="/work/tmp" #-t 
+opt[["tmpdir"]]="/tmp" #-t 
 opt[["consensus"]]=0.5
+opt[["genome_filter"]]=FALSE
+opt[["unknown"]]="keep"
 }else{
 opt = parse_args(opt_parser);
 }
@@ -246,7 +250,18 @@ if(!length(protfile)==1)
 {
 byedie(paste0('Please create a folder named "protein_seq" within ',opt[["inputdir"]]," and copy your protein fasta file there.\nPlease note that only one protein file is allowed per run."))
 }
-if(!opt[["no_annot"]])
+
+if(opt[["genome_filter"]])
+{
+dnafile=list.files(paste0("dna_seq"),full.name=T)
+dnafile=grep("(\\.fa\\.*g*z*$|\\.fna.*g*z*$|\\.fasta.*g*z*$)",dnafile,value=T,ignore.case=T)
+if(!length(dnafile)==1)
+{
+byedie(paste0('To perform genome filtering, please create a folder named "dna_seq" within ',opt[["inputdir"]]," and copy your DNA fasta file there.\nPlease note that only one DNA file is allowed per run."))
+}
+}
+
+if(!opt[["no_annot"]] || opt[["genome_filter"]])
 {
 annotfile=list.files(paste0("annotation_data"),full.name=T)
 annotfile=grep("\\.g[tf]f3*\\.*g*z*$",annotfile,value=T,ignore.case=T)
@@ -313,16 +328,11 @@ taxDict=sapply(rankedlineage,function(x) x[[2]])
 
 query_taxline=paste0("t",tax[paste0("t",opt[["querytax"]]),c("family","order","class","phylum","kingdom","superkingdom")])
 names(query_taxline)=c("family","order","class","phylum","kingdom","superkingdom")
-
-taxline_outtext=c("Query taxon lineage:",paste(names(query_taxline),gsub("^t","",query_taxline),taxDict[query_taxline],sep=":"),"\n")
-info(taxline_outtext)
-
-taxtable.file=list.files(pattern="taxID_DBcount.RDS",full.name=T,gsub("/ncbi_tax/.+$","",taxdb.loc.sel))
-taxtable=readRDS(taxtable.file)
-
 outdir=paste0(now.stamp)
-opt[["outdir"]]=outdir
+#for manual debugging, after readRDS("Arguments.RDS")
+#outdir=opt[["outdir"]]
 
+opt[["outdir"]]=outdir
 #Creating output directory structure
 if(!file.exists(outdir))
 {dir.create(outdir)
@@ -330,6 +340,13 @@ dir.create(paste0(outdir,"/R_saved_objects"))
 dir.create(paste0(outdir,"/diag_data"))
 dir.create(paste0(outdir,"/filtered_outputs"))
 }
+saveRDS(query_taxline,paste0(outdir,"/R_saved_objects/Query_taxline.RDS"))
+
+taxline_outtext=c("Query taxon lineage:",paste(names(query_taxline),gsub("^t","",query_taxline),taxDict[query_taxline],sep=":"),"\n")
+info(taxline_outtext)
+
+taxtable.file=list.files(pattern="taxID_DBcount.RDS",full.name=T,gsub("/ncbi_tax/.+$","",taxdb.loc.sel))
+taxtable=readRDS(taxtable.file)
 
 saveRDS(opt,paste0(outdir,"/R_saved_objects/Arguments.RDS"))
 close(logfile) #we close the initial log file and move it to the final outdir folder
@@ -410,11 +427,11 @@ colnames(ctgDB)=c("ProteinID","Contig")
 ctgDB[,"Contig"]=paste0("NullCtg_",1:length(input.headers))
 ctgDB[,"ProteinID"]=input.headers
 ctgDB=data.frame(ctgDB,stringsAsFactors=F)
-ctgDB=split(ctgDB,ctgDB[,"Contig"])
 GhostProts=""
 }
 saveRDS(ctgDB,paste0(outdir,"/R_saved_objects/",opt[["what"]],".ContigDB.RDS"))
-
+#manual debugging 
+#ctgDB=readRDS(paste0(outdir,"/R_saved_objects/",opt[["what"]],".ContigDB.RDS"))
 #Checking if the alignment step, that is computationally very costly, needs to be done
 
 run_alignment=TRUE
@@ -541,7 +558,6 @@ return(paste0("NA:",runLength(NR_taxRLE)[1]))
 }
 }
 
-
 topHitStat=function(x)
 {
 cat(".")
@@ -568,11 +584,13 @@ colnames(protTaxCalls)=c("family","order","class","phylum","kingdom","superkingd
 empty=c("NA:0","NA:0","NA:0","NA:0","NA:0","NA:0")
 
 missprots=setdiff(input.headers,rownames(protTaxCalls))
+if(length(missprots)>0)
+{
 miss_mat=matrix(rep(empty,length(missprots)),nrow=length(missprots),byrow=T)
 colnames(miss_mat)=colnames(protTaxCalls)
 rownames(miss_mat)=missprots
 protTaxCalls=rbind(protTaxCalls,miss_mat)
-
+}
 call_summarizer=function(x)
 {
 gb=list()
@@ -712,11 +730,12 @@ ctgDB[,"ProtSupport"]=ABC1.call[rownames(ctgDB)]
 ctgDB[is.na(ctgDB[,"ProtSupport"]),"ProtSupport"]=333333
 ctgDB.s=split(ctgDB,ctgDB[,"Contig"]) 
 ctgDB.sl=sapply(ctgDB.s,function(y) nrow(y))
-
 prot.callstats=summary(factor(ctgDB[,"ProtSupport"]),maxsum=nrow(ctgDB))
 prot.callstats=(prot.callstats[order(-prot.callstats)])
-
+if(!"333333"%in%names(prot.callstats))
+{unknownprot.ratio=0}else{
 unknownprot.ratio=round(prot.callstats["333333"]/sum(prot.callstats)*100,digits=2)
+}
 #Throw a warning if the ratio of unclassified proteins is high. That can affect ContScout ability to detect contamination.
 
 if(unknownprot.ratio>50)
@@ -879,6 +898,7 @@ protDB.TrimNames=gsub(" .+","",names(protDB))
 saveRDS(cumulative_ctg_drop,paste0(outdir,"/R_saved_objects/cumulative_ctg_drop.RDS"))
 saveRDS(cumulative_prot_drop,paste0(outdir,"/R_saved_objects/cumulative_prot_drop.RDS"))
 
+
 fa_exporter=function(x)
 {
 #This function creates the output folders (one per taxon rank) and saves unfiltered / filtered fasta files there. 
@@ -886,6 +906,32 @@ info(paste0("Exporting filtered data, processed at ",'"',x,'"', " level."))
 outsubdir=paste0(opt[["outdir"]],"/filtered_outputs/",x,"_level/")
 dir.create(outsubdir)
 dropped_prot_taxdata=cumulative_prot_drop[[x]]
+dropped_ctg_taxdata=cumulative_ctg_drop[[x]]
+if(opt[["genome_filter"]])
+{
+DNA=readDNAStringSet(dnafile)
+GFF=readGFF(annotfile)
+dna.kept=DNA[!names(DNA)%in%dropped_ctg_taxdata]
+dna.dropped=DNA[names(DNA)%in%dropped_ctg_taxdata]
+GFF.kept=GFF[!GFF[,1]%in%dropped_ctg_taxdata,]
+GFF.dropped=GFF[GFF[,1]%in%dropped_ctg_taxdata,]
+writeXStringSet(dna.kept,paste0(outsubdir,opt[["what"]],"_kept_dna.fasta"))
+if(length(dna.dropped)>0)
+{
+writeXStringSet(dna.dropped,paste0(outsubdir,opt[["what"]],"_dropped_dna.fasta"))
+}else
+{
+writeLines("",paste0(outsubdir,opt[["what"]],"_dropped_dna.fasta"))
+}
+export(GFF.kept,paste0(outsubdir,opt[["what"]],"_kept_annot.gff3"),format='gff3')
+if(nrow(GFF.dropped)>0)
+{
+export(GFF.dropped,paste0(outsubdir,opt[["what"]],"_dropped_annot.gff3"),format='gff3')
+}else
+{
+writeLines("",paste0(outsubdir,opt[["what"]],"_dropped_annot.gff3"))
+}
+}
 for(i in colnames(dropped_prot_taxdata)){
 dropped_prot_taxdata[,i]=gsub("^t","",dropped_prot_taxdata[,i])
 }
