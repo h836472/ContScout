@@ -43,8 +43,6 @@ Please allow 40-60 minutes of compilation time.
 > singularity build contscout_latest.sif docker://h836472/contscout:natcomm  
 
 (4) ready-to-use (binary) **Docker image**, obtained from DockerHub  
-> mkdir ~/CS_install  
-> cd ~/CS_install  
 > docker pull h836472/contscout:latest  
 
 **Set up your local reference databases**
