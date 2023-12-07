@@ -16,4 +16,4 @@ This tutorial will guide users trought ContScout using a small demo dataset deri
 >cd ~/CS_dir/query  
 
 **Perform ContScout analysis**  
->singularity run ~/CS_dir/singularity_image/contscout_latest.sif ContScout -u ~/CS_dir/databases -d swissprot -i ~/CS_dir/query/Quersube_tax_58331 -q 58331
+>singularity run ~/CS_dir/singularity_image/contscout_natcomm.sif ContScout -u ~/CS_dir/databases -d swissprot -i ~/CS_dir/query/Quersube_tax_58331 -q 58331
