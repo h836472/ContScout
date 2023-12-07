@@ -16,11 +16,11 @@ Prerequisite: please install ContScout. Consult the user manual for more details
 >mkdir ~/CS_dir  
 >cd ~/CS_dir  
 >mkdir databases  
->singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -d swissprot
+>singularity run ~/CS_dir/singularity_image/contscout_natcomm.sif updateDB -u ~/CS_dir/databases -d swissprot
 
 If you have less than 500 GB free space in your project directory, the tool will quit with error. For testing, you can disable this test by adding the -f (--force) flag to the command. Using this flag while setting up a real database is not recommended.
 
->singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -f -d swissprot  
+>singularity run ~/CS_dir/singularity_image/contscout_natcomm.sif updateDB -u ~/CS_dir/databases -f -d swissprot  
 
 Please note that even the demo / swissprot database creation will take several minutes to complete. Comprehensive databases, such as nr, refseq, uniprotKB will take several hours to download and pre-format.
 
@@ -49,10 +49,10 @@ Example:
 >cd ~/CS_dir/customDB  
 >wget -c https://github.com/h836472/ContScout/raw/main/UserManual/Tutorials/TutorialExampleData/demoDB_for_import.tar.gz   
 >tar -xvf demoDB_for_import.tar.gz   
->singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -d custom\:demoDB\:\~/CS_dir/customDB/demoDB.fasta
+>singularity run ~/CS_dir/singularity_image/contscout_natcomm.sif updateDB -u ~/CS_dir/databases -d custom\:demoDB\:\~/CS_dir/customDB/demoDB.fasta
   
 If you have less than 500 GB free space in your project directory, the tool will quit with error. For testing, you can disable this test by adding the -f (--force) flag to the command. Using this flag while setting up a real database is not recommended.
->singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -d custom\:demoDB\:\~/CS_dir/customDB/demoDB.fasta -f
+>singularity run ~/CS_dir/singularity_image/contscout_natcomm.sif updateDB -u ~/CS_dir/databases -d custom\:demoDB\:\~/CS_dir/customDB/demoDB.fasta -f
 
 You can list all installed databases under a user directory with the following commands.
->singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -l
+>singularity run ~/CS_dir/singularity_image/contscout_natcomm.sif updateDB -u ~/CS_dir/databases -l
