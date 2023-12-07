@@ -123,7 +123,7 @@ Outputs of ContScout are organized in an output folder (example: *Saccharomyces_
 The core assumption behind ContScout is that true contamination is organized into homogenous contigs / scaffolds while other foreign-looking proteins (including ones obtained via horizontal gene transfer) are sharing contigs with genuine host proteins. To this end, ContScout compares individually picked foreign-looking proteins ("IndivProtDrop") with proteins based on contig filtering (CtgProtDrop).   
   
 **Important to note:**  
-Depending on the reference database, the number of closely related sequences at a fine-grade taxon level could be low. In such case, the top hits of some genuine host proteins might apper from sister clades instead of the expected taxon. Currently, ContScout flags any taxon mismatch as potential contamination and tries to resolv these cases at the next level, where hits are summarized over contigs.
+Depending on the reference database, the number of closely related sequences at a fine-grade taxon level could be low. In such case, the top hits of some genuine host proteins might apper from sister clades instead of the expected taxon. Currently, ContScout flags any taxon mismatch as potential contamination and tries to resolve these cases at the next level, where hits are summarized over contigs.
 
 **Indicators of dubious analysis results at particular taxon levels:**
 - value at medRLE (that is the median number of reads supporting individual protein taxon calls) dropping below 5
