@@ -43,7 +43,7 @@ P69739|MBHS_ECOLI\t83333
 
 Example:
 
->mkdir ~/CS_dir 
+>mkdir ~/CS_dir  
 >cd ~/CS_dir  
 >mkdir customDB  
 >cd ~/CS_dir/customDB  
