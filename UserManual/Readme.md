@@ -10,7 +10,9 @@ ContScout is written in R language. Both the code and the external apps it depen
 
 External application as well as some ContScout components benefit from SMP multi-cpu machines and the system is written to automatically find the best vector instructions that the processor supports (avx2 >> sse4.1 >> sse2). Due to working with huge databases, ContScout requrires at least 128 GB of RAM and 500 GB of storage space but depending on the number of locally mirrored reference databases the storage footprint can easily reach several TeraBytes. There is a trade between allocated RAM and database search time where adding more RAM (256 GB, 512GB or 1 TB) significantly speeds up the database lookup step. Typical installation time for the tool from Dockerfile is less then an hour. Typical database setup for "test" (swissprot, tutorial) databases is a matter of minutes, while "real" databases take several hours to download and pre-format before analysis. Runtime for a typical eukaryote genome is between 1 and 2 hours on a 24-core server / workstation computer.
 
-**Installation**
+**Installation **
+
+**Note:** all examples will install the ContScout version that was used in the Nature Communications publication. If you wish to install the latest version, please change branch from NatComm to main.
 
 ContScout can be installed by
   
@@ -30,15 +32,15 @@ Pre-requisites for a native installation
 (2) as **locally built Docker image**, created from the docker file provided at GitHub (Recommended for advanced users / developers)  
 > mkdir ~/CS_install  
 > cd ~/CS_install  
-> git clone https://github.com/h836472/ContScout.git  
+> git clone --branch NatComm https://github.com/h836472/ContScout.git  
 > cd ContScout/DockerScript/  
-> docker build ./ --tag contscout:latest --build-arg CACHEBUST=$(data+%s)  
+> docker build ./ --tag contscout:NatComm --build-arg CACHEBUST=$(data+%s)  
 Please allow 40-60 minutes of compilation time.
 
 (3) ready-to-use (binary) **Singularity image**, obtained from DockerHub  
 > mkdir ~/CS_install  
 > cd ~/CS_install  
-> singularity build contscout_latest.sif docker://h836472/contscout:latest  
+> singularity build contscout_latest.sif docker://h836472/contscout:natcomm  
 
 (4) ready-to-use (binary) **Docker image**, obtained from DockerHub  
 > mkdir ~/CS_install  
