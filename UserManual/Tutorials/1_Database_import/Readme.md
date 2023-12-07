@@ -13,7 +13,7 @@ ContScout relies on a taxon-aware reference database that is used to tag individ
 
 Prerequisite: please install ContScout. Consult the user manual for more details.  
 
->mkdir ~/CS_dir
+>mkdir ~/CS_dir  
 >cd ~/CS_dir  
 >mkdir databases  
 >singularity run ~/CS_dir/singularity_image/contscout_latest.sif updateDB -u ~/CS_dir/databases -d swissprot
@@ -43,7 +43,7 @@ P69739|MBHS_ECOLI\t83333
 
 Example:
 
->~/CS_dir  
+>mkdir ~/CS_dir 
 >cd ~/CS_dir  
 >mkdir customDB  
 >cd ~/CS_dir/customDB  
