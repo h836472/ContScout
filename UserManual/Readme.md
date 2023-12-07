@@ -49,7 +49,7 @@ Please allow 40-60 minutes of compilation time.
 
 The ContScout package contains an automated database updater tool called "updateDB" that fetches, labels and pre-formats public protein databases, such as uniref, nr or uniprotKB. Taxonomical labeling is based on the taxonomy database from NCBI.  
 You can check the command line parameters of the tool from Docker / Singularity
-* Docker: docker run h836472/contscout:latest updateDB -h  
+* Docker: docker run h836472/contscout:natcomm updateDB -h  
 * Singularity: singularity exec <cs_sif_file> updateDB -h
 
 **Command line options for updateDB**
