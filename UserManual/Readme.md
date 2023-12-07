@@ -71,7 +71,7 @@ __*Please note*__: While performing a protein database installation, updateDB al
   Public databases are ***huge***:, with compressed archives exceeding 50-80 GB. Depending on the network connection, download and the subsequent formatting steps will ***take several hours***.
  
 **How to run ContScout**
-- check if your computer meets the program's minimum requirements (150 GB RAM, 500 GB of storage. Recommended: >=512 GB RAM, >=4 TB storage)  
+- check if your computer meets the program's minimum requirements (128 GB RAM, 500 GB of storage. Recommended: >=512 GB RAM, >=4 TB storage)  
 - install ContScout  
 - install a reference database using updateDB  
 - create an input folder for your query data, that shall contain two subfolders: "protein_seq" and "annotation_data" 
