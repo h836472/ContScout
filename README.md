@@ -12,7 +12,7 @@ Pre-compiled docker image can be downloaded by the following command:
 *docker pull h836472/contscout:develop*
 
 **More information**  
-Please consult the article Balint et al. 2024 "ContScout: sensitive detection and removal of contamination from annotated genomes", available free at Nature Comminications. DOI: [10.1038/s41467-024-45024-5]([url](https://doi.org/10.1038/s41467-024-45024-5))
+Please consult the article Balint et al. 2024 "ContScout: sensitive detection and removal of contamination from annotated genomes", available free at Nature Comminications. DOI: [10.1038/s41467-024-45024-5](https://doi.org/10.1038/s41467-024-45024-5)
 
 **News**  
 After a major improvement of the classification algorithm, Contscout can now separate closely related host-contamination pairs. In simulation, ContScout was demonstrated to accurately separate contamination at family level (i.e.  *Candida albicans*  contamination cleaned from  *Saccharomyces cerevisiae*.)
