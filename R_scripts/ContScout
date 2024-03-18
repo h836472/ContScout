@@ -61,6 +61,8 @@ option_list = list(
               help="Reuse ABC file from previous run if possible."),
   make_option(c("-n", "--no_annot"), action="store_true", default=FALSE,  
               help="Perform analysis on a genome with no annotation."),
+  make_option(c("-N", "--num_hits"),  type="numeric", default=100,  
+              help="Perform analysis on a genome with no annotation."),
   make_option(c("-s", "--sensM"), type="character", default="2", 
               help="Sensitivity value for MMSeqs", metavar="sensM"),
   make_option(c("-S", "--sensD"), type="character", default="fast", 
@@ -87,6 +89,7 @@ opt[["inputdir"]]="/node7_data/balintb/ContScout_Revision/Revision#2/Effect_of_N
 opt[["outdir"]]="./"
 opt[["querytax"]]=946362 #-q 
 opt[["force"]]=FALSE
+opt[["num_hits"]]=FALSE
 opt[["reuse_abc"]]=TRUE #-r
 opt[["no_annot"]]=FALSE
 opt[["sensM"]]=2 #-s 2
@@ -540,7 +543,7 @@ colnames(tax.sel)=paste0("Tax:",colnames(tax.sel))
 ABC=cbind(ABC,tax.sel)
 ABC.s=split(ABC,ABC[,"Q"])
 ABC.s=mclapply(ABC.s,function(x) return(x[order(-x[,"QPCI"]),]),mc.cores=opt[["cpu"]])
-ABC.s=lapply(ABC.s,function(x) head(x,n=100))
+ABC.s=lapply(ABC.s,function(x) head(x,n=opt[["num_hits"]]))
 saveRDS(ABC.s,paste0(outdir,"/R_saved_objects/ABC.s.RDS"))
 system(paste0("md5sum ",outdir,"/R_saved_objects/ABC.s.RDS >",outdir,"/R_saved_objects/ABC.s.md5sum"))
 
