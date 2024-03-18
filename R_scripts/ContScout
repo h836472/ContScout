@@ -62,7 +62,7 @@ option_list = list(
   make_option(c("-n", "--no_annot"), action="store_true", default=FALSE,  
               help="Perform analysis on a genome with no annotation."),
   make_option(c("-N", "--num_hits"),  type="numeric", default=100,  
-              help="Perform analysis on a genome with no annotation."),
+              help="Consider up to this many database hits per query protein."),
   make_option(c("-s", "--sensM"), type="character", default="2", 
               help="Sensitivity value for MMSeqs", metavar="sensM"),
   make_option(c("-S", "--sensD"), type="character", default="fast", 
