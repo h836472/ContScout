@@ -94,7 +94,7 @@ Explanation of ContScout parameters:
   - **-f / --force** #when discovering inconsistencies between GFF annotation and fasta proteins file, this flag forces analysis to continue 
   - **-r / --reuse_abc** #skip the database search and reuse ABC file from previous run if possible
   - **-n / --no_annot** #perform the analysis without using any annotation file. Not recommended.
-  - **-N / --num_hits** #Consider only up to "N" best database hist while labeling individual proteins. [default: 100]
+  - **-N / --num_hits** #Consider only up to "N" best database hits while labeling individual proteins. [default: 100]
   - **-s / --sensM** #MMSeqs sensitivity parameter [default: 2]
   - **-S / --sensD** #Diamond sensitivity parameter [default: "fast"]
   - **-p / --pci** #minimum percentage of sequence identity required. [default: 20]
