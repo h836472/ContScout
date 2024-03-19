@@ -68,7 +68,7 @@ option_list = list(
   make_option(c("-S", "--sensD"), type="character", default="fast", 
               help="Sensitivity value for Diamond", metavar="sensD"),
   make_option(c("-m", "--memlimit"), type="character", default=NULL, 
-              help="Memory usage limit for MMSeqs", metavar="memlimit"),
+              help="Memory usage limit for ", metavar="memlimit"),
   make_option(c("-l", "--list_databases"), action="store_true", default=FALSE,
               help="List pre-formatted databases stored in the local database repository."),
   make_option(c("-p", "--pci"), type="character", default="20",
@@ -89,7 +89,7 @@ opt[["inputdir"]]="/node7_data/balintb/ContScout_Revision/Revision#2/Effect_of_N
 opt[["outdir"]]="./"
 opt[["querytax"]]=946362 #-q 
 opt[["force"]]=FALSE
-opt[["num_hits"]]=FALSE
+opt[["num_hits"]]=100
 opt[["reuse_abc"]]=TRUE #-r
 opt[["no_annot"]]=FALSE
 opt[["sensM"]]=2 #-s 2
@@ -133,9 +133,24 @@ opt[["cpu"]]=numC_max
 
 if(!tolower(opt[["unknown"]])%in%c("keep","drop"))
 {
-byedie(paste0("Please set, how unknown proteins shall be treated. Accepted -U options: ",'"',"keep",'"'," or ",'"',"drop",'"',".\n"))
+byedie(paste0("Please set,how unknown proteins shall be treated. Accepted -U options: ",'"',"keep",'"'," or ",'"',"drop",'"',".\n"))
 }
 
+if(!grepl("^\\d+$",opt[["num_hits"]]))
+{
+byedie(paste0("Please set the number of maximum hits to look for per each query sequence."))
+}
+opt[["num_hits"]]=as.numeric(opt[["num_hits"]])
+
+if(opt[["num_hits"]]>=300)
+{
+info(paste0("Requesting for many (-N ",opt[["num_hits"]],") hits per query sequence. Runtime and disk storage might suffer.\n"),log=T)
+}
+
+if(as.numeric(opt[["num_hits"]])<=50)
+{
+info(paste0("Requesting for too few (-N ",opt[["num_hits"]],") hits per query sequence. Screening performance might suffer.\n"),log=T)
+}
 
 #user dir check. Reference databases are kept in this directory, created by updateDB
 if(is.null(opt[["userdir"]]))
@@ -496,7 +511,7 @@ MM.qdb.cmd=paste0(mmseqs.bin," createdb ",protfile," ",outdir,"/",qdb)
 cat("Converting query sequences to MMSeqs database format\n")
 system(MM.qdb.cmd)
 mm.refDB.loc=paste0(opt[["userdir"]],"/",db.sel.data["MMSeqs_DB","Value"])
-MM.search.cmd=paste0(mmseqs.bin," search -s ",opt[["sensM"]]," -a --threads ",opt[["cpu"]]," ",outdir,"/",qdb," ",mm.refDB.loc," ",outdir,"/TaxMMSeqs.resDB"," ",opt[["tmpdir"]])
+MM.search.cmd=paste0(mmseqs.bin," search -s ",opt[["sensM"]]," --max-accept ",opt[["num_hits"]]," --max-seqs ",opt[["num_hits"]]," -a --threads ",opt[["cpu"]]," ",outdir,"/",qdb," ",mm.refDB.loc," ",outdir,"/TaxMMSeqs.resDB"," ",opt[["tmpdir"]])
 if(!is.null(opt[["memlimit"]]))
 {
 MM.search.cmd=paste0(MM.search.cmd," --split-memory-limit ",opt[["memlimit"]])
@@ -513,7 +528,7 @@ system(Trafo.cmd)
 
 ##Diamond aligner selected##
 diam.refDB.loc=paste0(opt[["userdir"]],"/",db.sel.data["Diamond_DB","Value"])
-DM.search.cmd=paste0("diamond blastp -d ",diam.refDB.loc," -q ",protfile," -o ",outdir,"/RefTaxLookup.ABC -f 6 qseqid sseqid bitscore qlen nident --threads ", opt[["cpu"]]," ",opt[["sens_D"]])
+DM.search.cmd=paste0("diamond blastp -d ",diam.refDB.loc," -q ",protfile," -o ",outdir,"/RefTaxLookup.ABC --max-target-seqs ",opt[["num_hits"]]," -f 6 qseqid sseqid bitscore qlen nident --threads ", opt[["cpu"]]," ",opt[["sens_D"]])
 if(!is.null(opt[["memlimit"]]))
 {
 DM.search.cmd=paste0(DM.search.cmd," --memory-limit ",gsub("G$","",opt[["memlimit"]]))
