@@ -1,0 +1,19 @@
+#docker build ./ --tag h836472/contscout:latest --build-arg CACHEBUST=$(date +"%s")
+#a speed-efficient updater Docker script that uses the image created for the 
+#Nature Communication article (DOI: 10.1038/s41467-024-45024-5)
+#It updates all R scripts to github h836472/ContScout:latest while all other parts 
+#(MMSeqs, DIAMOND, R and modules) are untouched.
+
+FROM h836472/contscout:natcomm
+WORKDIR /data
+#section to ensure that files are indeed pulled at build and NOT used from cache
+ARG CACHEBUST=1
+#at build, call an extra argument: --build-arg CACHEBUST=$(date +%s)
+
+#ADD ContScout Downloader and main scripts
+ADD "https://github.com/h836472/ContScout/raw/main/R_scripts/ContScout" skipcache
+ADD "https://github.com/h836472/ContScout/raw/main/R_scripts/updateDB" skipcache
+RUN wget https://github.com/h836472/ContScout/raw/main/R_scripts/ContScout &&\
+mv ContScout /usr/bin/ContScout && chmod a+x /usr/bin/ContScout
+RUN wget https://github.com/h836472/ContScout/raw/main/R_scripts/updateDB &&\
+mv updateDB /usr/bin/updateDB&& chmod a+x /usr/bin/updateDB
