@@ -90,9 +90,9 @@ ARG CACHEBUST=1
 #at build, call an extra argument: --build-arg CACHEBUST=$(date +%s)
 
 #ADD ContScout Downloader and main scripts
-ADD "https://github.com/h836472/ContScout/raw/develop/R_scripts/ContScout" skipcache
-ADD "https://github.com/h836472/ContScout/raw/develop/R_scripts/updateDB" skipcache
-RUN wget https://github.com/h836472/ContScout/raw/develop/R_scripts/ContScout &&\
+ADD "https://github.com/h836472/ContScout/raw/main/R_scripts/ContScout" skipcache
+ADD "https://github.com/h836472/ContScout/raw/main/R_scripts/updateDB" skipcache
+RUN wget https://github.com/h836472/ContScout/raw/main/R_scripts/ContScout &&\
 mv ContScout /usr/bin/ContScout && chmod a+x /usr/bin/ContScout
-RUN wget https://github.com/h836472/ContScout/raw/develop/R_scripts/updateDB &&\
+RUN wget https://github.com/h836472/ContScout/raw/main/R_scripts/updateDB &&\
 mv updateDB /usr/bin/updateDB&& chmod a+x /usr/bin/updateDB
