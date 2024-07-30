@@ -98,7 +98,7 @@ Explanation of ContScout parameters:
   - **-s / --sensM** #MMSeqs sensitivity parameter [default: 2]
   - **-S / --sensD** #Diamond sensitivity parameter [default: "fast"]
   - **-p / --pci** #minimum percentage of sequence identity required. [default: 20]
-  - **-m / --memlimit** #limit Diamond / MMSeqs to use this amount of RAM. [example: 150G]
+  - **-m / --memlimit** #limit the aligner RAM usage (only supported with MMSeqs). [example: 150G]
   - **-t/ --temp** #location of the temporary folder. 
   - **-a/ -aligner-** #algorithm to be used for database lookup (mmseqs or diamond)
 
