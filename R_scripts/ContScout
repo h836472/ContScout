@@ -147,6 +147,11 @@ if(opt[["num_hits"]]>=300)
 info(paste0("Requesting for many (-N ",opt[["num_hits"]],") hits per query sequence. Runtime and disk storage might suffer.\n"),log=T)
 }
 
+if(opt[["aligner"]]=="diamond" && !is.null(opt[["memlimit"]]))
+{
+byedie("Aligner memory limitation is no longer supported by Diamond. If you need this function, please use MMSeqs (-a "mmseqs") instead.")
+}
+
 if(as.numeric(opt[["num_hits"]])<=50)
 {
 info(paste0("Requesting for too few (-N ",opt[["num_hits"]],") hits per query sequence. Screening performance might suffer.\n"),log=T)
