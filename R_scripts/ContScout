@@ -1,5 +1,5 @@
 #!/usr/bin/Rscript
-#NC Revision#2 official version, 12th Sep 2023, 13:20
+#Development version, 30th Sep 2024
 byedie=function(x,log=TRUE,sure_q=TRUE) #set FALSE for development, TRUE for production
 {
 cat(x)
@@ -149,7 +149,7 @@ info(paste0("Requesting for many (-N ",opt[["num_hits"]],") hits per query seque
 
 if(opt[["aligner"]]=="diamond" && !is.null(opt[["memlimit"]]))
 {
-byedie("Aligner memory limitation is no longer supported by Diamond. If you need this function, please use MMSeqs (-a "mmseqs") instead.")
+byedie("Aligner memory limitation is no longer supported by Diamond. If you need this function, please use MMSeqs (-a 'mmseqs') instead.")
 }
 
 if(as.numeric(opt[["num_hits"]])<=50)
