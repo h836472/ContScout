@@ -138,7 +138,7 @@ byedie(paste0("Please set,how unknown proteins shall be treated. Accepted -U opt
 
 if(!grepl("^\\d+$",opt[["num_hits"]]))
 {
-byedie(paste0("Please set the number of maximum hits to look for per each query sequence."))
+byedie(paste0("Please set the number of maximum hits to look for per each query sequence.\n"))
 }
 opt[["num_hits"]]=as.numeric(opt[["num_hits"]])
 
@@ -149,7 +149,7 @@ info(paste0("Requesting for many (-N ",opt[["num_hits"]],") hits per query seque
 
 if(opt[["aligner"]]=="diamond" && !is.null(opt[["memlimit"]]))
 {
-byedie("Aligner memory limitation is no longer supported by Diamond. If you need this function, please use MMSeqs (-a 'mmseqs') instead.")
+byedie("Aligner memory limitation is no longer supported by Diamond. If you need this function, please use MMSeqs (-a 'mmseqs') instead.\n")
 }
 
 if(as.numeric(opt[["num_hits"]])<=50)
@@ -242,13 +242,13 @@ if(!file.exists(opt[["tmpdir"]]))
 
 if(opt[["aligner"]]=="diamond" && !tolower(opt[["sensD"]])%in%c("mid-sensitive","sensitive","more-sensitive","very-sensitive","ultra-sensitive","fast"))
 {
-byedie("Please set a valid Diamond sensitivity value (default: fast).")
+byedie("Please set a valid Diamond sensitivity value (default: fast).\n")
 }
 
 #memlimit format check
 if (!is.null(opt[["memlimit"]])&&!grepl("^\\d+G$",opt[["memlimit"]]))
 {
-byedie(paste0('Please provide a memory limit in {num}G format. Example: 150G!\n'))
+byedie(paste0("Please provide a memory limit in {num}G format. Example: 150G!\n"))
 }
 
 #aligner check
@@ -271,7 +271,7 @@ protfile=list.files(paste0("protein_seq"),full.name=T)
 protfile=grep("(\\.fa\\.*g*z*$|\\.faa.*g*z*$|\\.fasta.*g*z*$)",protfile,value=T,ignore.case=T)
 if(!length(protfile)==1)
 {
-byedie(paste0('Please create a folder named "protein_seq" within ',opt[["inputdir"]]," and copy your protein fasta file there.\nPlease note that only one protein file is allowed per run."))
+byedie(paste0('Please create a folder named "protein_seq" within ',opt[["inputdir"]]," and copy your protein fasta file there.\nPlease note that only one protein file is allowed per run.\n"))
 }
 
 if(opt[["genome_filter"]])
@@ -280,7 +280,7 @@ dnafile=list.files(paste0("dna_seq"),full.name=T)
 dnafile=grep("(\\.fa\\.*g*z*$|\\.fna.*g*z*$|\\.fasta.*g*z*$)",dnafile,value=T,ignore.case=T)
 if(!length(dnafile)==1)
 {
-byedie(paste0('To perform genome filtering, please create a folder named "dna_seq" within ',opt[["inputdir"]]," and copy your DNA fasta file there.\nPlease note that only one DNA file is allowed per run."))
+byedie(paste0('To perform genome filtering, please create a folder named "dna_seq" within ',opt[["inputdir"]]," and copy your DNA fasta file there.\nPlease note that only one DNA file is allowed per run.\n"))
 }
 }
 
@@ -290,7 +290,7 @@ annotfile=list.files(paste0("annotation_data"),full.name=T)
 annotfile=grep("\\.g[tf]f3*\\.*g*z*$",annotfile,value=T,ignore.case=T)
 if(!length(annotfile)==1)
 {
-byedie(paste0('Please create a folder named "annotation_data" within ',opt[["inputdir"]]," and copy your GTF/GFF annotation file there.\nPlease note that only one annotation file is allowed per run."))
+byedie(paste0('Please create a folder named "annotation_data" within ',opt[["inputdir"]]," and copy your GTF/GFF annotation file there.\nPlease note that only one annotation file is allowed per run.\n"))
 }
 }else{
 info("Option -n active, run is carried out witout an annotation file.\nEach protein will be assigned into a virtual singleton contig.\n")
@@ -299,7 +299,7 @@ info("Option -n active, run is carried out witout an annotation file.\nEach prot
 opt[["consensus"]]=as.numeric(opt[["consensus"]])
 if(is.na(opt[["consensus"]]) || opt[["consensus"]]<0.5 || opt[["consensus"]] >(1-1e-4))
 {
-byedie(paste0("Please set a valid consensus vote therhold for contig taxon call via parameter -C.\nThis value shall be between 0.5 and 0.9999. Default value is 0.5"))
+byedie(paste0("Please set a valid consensus vote therhold for contig taxon call via parameter -C.\nThis value shall be between 0.5 and 0.9999. Default value is 0.5\n"))
 }
 #Tool automatically picks up the NCBI database version that was used by updateDB, when formatting the reference database.
 taxdb.loc.sel=paste0(opt[["userdir"]],"/",gsub("/diamond/.+$","",db.sel.data["Diamond_DB","Value"]),"/ncbi_tax/",db.sel.data["Tax_CRC","Value"])
@@ -312,7 +312,7 @@ q.tax.hit=grep(paste0("^",opt[["querytax"]],"\\t"),q.tax.hit,value=T)
 
 if(length(q.tax.hit)!=1)
 {
-byedie(paste0('Could not link TaxonID "',opt[["querytax"]],'" to a single taxon tag within the Taxon Database. It is either missing or present in multiple copies.'))
+byedie(paste0('Could not link TaxonID "',opt[["querytax"]],'" to a single taxon tag within the Taxon Database. It is either missing or present in multiple copies.\n'))
 }else{
  q.tax.hit=gsub("\\t\\|$","",q.tax.hit)
  tax.last=gsub("^.+\\t","",q.tax.hit)
@@ -329,7 +329,7 @@ byedie(paste0('Could not link TaxonID "',opt[["querytax"]],'" to a single taxon 
    if(tax.euk2=="")
     {q.tax.tag="Other_eukaryote"}else{q.tax.tag=tax.euk2}
   }else{
-byedie("The provided TaxonID was not found within Archaea, Bacteria or Eukarota.")
+byedie("The provided TaxonID was not found within Archaea, Bacteria or Eukarota.\n")
 }
 }
 now.stamp = paste0(tax.first,"_tax_",opt[["querytax"]],"_",format(time_start,"%d%b_%Y_%H_%M"))
