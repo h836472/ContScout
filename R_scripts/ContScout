@@ -1,5 +1,5 @@
 #!/usr/bin/Rscript
-#Development version, 30th Sep 2024
+#Main, 30th Sep 2024
 byedie=function(x,log=TRUE,sure_q=TRUE) #set FALSE for development, TRUE for production
 {
 cat(x)
