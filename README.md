@@ -9,7 +9,7 @@ Each query protein in the input file is first matched against a taxon-labelled r
 **Implementation**  
 Contscout is implemented in R, pre-packaged as a Docker image for convenient use. Docker image contains all the dependencies including the MMSeqs and Diamond software.
 Pre-compiled docker image can be downloaded by the following command:  
-*docker pull h836472/contscout:develop*
+*docker pull h836472/contscout:latest*
 
 **More information**  
 Please consult the article Balint et al. 2024 "ContScout: sensitive detection and removal of contamination from annotated genomes", freely available at Nature Comminications. DOI: [10.1038/s41467-024-45024-5](https://doi.org/10.1038/s41467-024-45024-5)
