@@ -17,8 +17,23 @@ In this tutorial,
 
 **Download example data**
 
-Please visit JGI Mycocosm  *Aspergillus zonatus*  (Aspzo1) download page (https://genome.jgi.doe.gov/portal/Aspzo1/Aspzo1.download.html/).
+Please visit JGI Mycocosm  *Aspergillus zonatus*  (Aspzo1) download page (https://genome.jgi.doe.gov/portal/Aspzo1/Aspzo1.download.html/). 
 
-Please note: in order to download the protein fasta file (Aspzo1_GeneCatalog_proteins_20121010.aa.fasta.gz) and the annotation file (Aspzo1_GeneCatalog_genes_20121010.gff.gz) you need to register for a JGI user account.
+Select and download the files as shown in the screen shot below. Copy the annotation files to your working directory (example: /home/balintb/annotfix)
+
 
 ![en:JGIdownload](JGIdownload.jpg)
+
+
+
+Please note: in order to download the protein you need to register for a JGI user account.
+
+**Starting R from the ContScout docker image**
+
+**Starting R from the ContScout docker image**
+
+In the tutorial, we use the R environment from the ContScout docker image, together with the pre-installed **rtracklayer** and **Biostrings** packages.
+If you have a working R installation with the two required packages you may proceed straight to step "Importing data"
+
+THIS PART OF THE TUTORIAL IS UNDER DEVELOPMENT PLEASE CHECK IT AGAIN IN WITHIN A FEW DAYS.
+
