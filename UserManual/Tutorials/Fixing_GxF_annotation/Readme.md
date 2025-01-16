@@ -33,7 +33,7 @@ missing from the annotation.
 ```
 singularity run -B /scratch:/scratch /Software/SingularityImages/contscout/contscout.sif ContScout -u /scratch/balintb/Databases/ -d uniprotKB -i /scratch/balintb/Augustus/E_coli/ -q 562
 ```
-
+![en:ContScout_Fails](CS_Annot_Error.png)
 **Importing data to R using the ContScout docker image**
 
 In the tutorial, we use the **R** environment straight from the
@@ -44,64 +44,72 @@ and start R.
 ```
 singularity run -B \`pwd\`:/data docker://h836472/contscout:latest R
 ```
-
+Ensure that annotation file and sequence file are both present  
 ```
-#ensure that annotation file and sequence file are both present  
 list.files(recursive=T)
-
 #[1] "annotation_data/GCF_000167835.1_ASM16783v1_Aug_Annot.gff3"
 #[2] "protein_seq/GCF_000167835.1_ASM16783v1_Aug_Prot.faa"
-
+```
 #load required R libraries  
+```
 library("Biostrings")
 library("rtracklayer")
-
-#load data  
+```
+Import sequence data and annotation to R
+```
 protSeq=readAAStringSet("protein_seq/GCF_000167835.1_ASM16783v1_Aug_Prot.faa")  
 annot=readGFF("annotation_data/GCF_000167835.1_ASM16783v1_Aug_Annot.gff3")
-
-#manually confirm that protein_id is missing from the annotation  
+```
+Manually confirm that protein_id is missing from the annotation  
+```
 colnames(annot)
 #[1] "seqid" "source" "type" "start" "end" "score" "strand" "phase"
 #[9] "ID" "Parent"  
+```
   
-#check the feature types present in the annotation file. Ensure that
-CDS is present.
+Check the feature types present in the annotation file. Ensure that CDS feature type is present.
+```
 any(annot[,"type"]=="CDS")
 #TRUE
-
-#add a new annotation column, filled with NA-s
+```
+Add a new annotation column, filled with NA-s
+```
 annot[,"protein_id"]=NA
-
-#for all CDS features, we copy the tags from "ID" to "protein_id"  
+For all CDS features, we copy the tags from "ID" to "protein_id"  
 annot[annot[,"type"]=="CDS","protein_id"]=annot[annot[,"type"]=="CDS","ID"]  
-  
-#check if the protein_IDs from annotation match IDs of the protein
-sequences  
+```
+Annotation should look like this.
+![en:Annot_fix](CS_Annot_Fix.png)
+
+Check if the protein_IDs from annotation match IDs of the protein sequences
+```
 length(setdiff(names(protSeq),annot[,"protein_id"]))/length(protSeq)*100
 #[1] 100  
-
 length(intersect(names(protSeq),annot[,"protein_id"]))/length(protSeq)*100  
 #[1] 0
-
-#unfortunately, IDs look completely different between protein seq and
-annotation  
-#if we continue like that, ContScout will give an error  
-#Error! Protein IDs in the protein sequence file completely differ from
+```
+Unfortunately, IDs look completely different between protein seq and
+annotation.
+If we continue like that, ContScout will give an error  
+Error! Protein IDs in the protein sequence file completely differ from
 the IDs used in the GFF file.
 
-#Looking at the IDs it appears that the GFF IDs contain an extra ".cds"
+Looking at the IDs it appears that the GFF IDs contain an extra ".cds"
 suffix. Let's remove it.
- 
+``` 
 annot[,"protein_id"]=gsub("\\.cds$","",annot[,"protein_id"])
 length(setdiff(names(protSeq),annot[,"protein_id"]))/length(protSeq)*100  
 #[1] 0  
 length(intersect(names(protSeq),annot[,"protein_id"]))/length(protSeq)*100
 #[1] 100  
-#protein seq and annotation data is completely matched by now
+```
+Protein seq and annotation data is completely matched by now. We can save changes.
+```
 export(annot,"annotation_data/GCF_000167835.1_ASM16783v1_Aug_AnnotFixed.gff3",format="gff3")  
-  
-#Do not forget to remove the old GFF from the query folder before starting ContScout
+```  
+Do not forget to remove the old GFF from the query folder before starting ContScout
+```
 unlink("annotation_data/GCF_000167835.1_ASM16783v1_Aug_Annot.gff3")
 ```
 After these modifications, ContScout is good to go.
+![en:ContScout_OK](CS_Annot_OK.png)
