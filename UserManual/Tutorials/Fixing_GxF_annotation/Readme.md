@@ -1,39 +1,107 @@
-#GxF annotation fix hands on tutorial
+# GxF annotation fix hands on tutorial
 
 **Background**
 
-For ContScout to work properly, GxF annotation (GFF, GTF) file should fulfil two criteria:
-1. Annotation file should have a "protein\_id" attribute
-2. protein\_id tags from annotation file should match protein names as written in the fasta headers
+For ContScout to work properly, GxF annotation (GFF, GFF3 or GTF) file
+should fulfill two criteria:
 
-If these pre-requisites are not met, ContScout will stop with one of the following errors:
-+ Error found in annotation file. After GFF import, there should be exactly one \"protein_id\" column present. Exiting...
-+ Error! Protein IDs in the protein sequence file completely differ from the IDs used in the GFF file. Exiting...
+-  protein-coding features (CDS or gene) must have a "protein_id"
+    attribute
 
-In this tutorial, 
-+ we are going to download example data from JGI Mycocosm
-+ we learn about a few R packages / functions that allow modification of fasta and GxF annotation files
-+ fix example JGI input data for subsequent ContScout analysis
+-  protein_id tags from annotation file should match protein names in
+    the fasta headers
 
-**Download example data**
+**Example data (missing "protein_id" data)**
 
-Please visit JGI Mycocosm  *Aspergillus zonatus*  (Aspzo1) download page (https://genome.jgi.doe.gov/portal/Aspzo1/Aspzo1.download.html/). 
+In this part of the tutorial, we are going to use **Augustus** to
+perform automated annotation on an *E. coli* draft genome (assembly id:
+GCF_000167835.1, taxonID: 562)
 
-Select and download the files as shown in the screen shot below. Copy the annotation files to your working directory (example: /home/balintb/annotfix)
+**Augustus command:**  
+```
+augustus --species=E_coli_K12 GCF_000167835.1_ASM16783v1_genomic.fna --gff3=on >GCF_000167835.1_ASM16783v1_Aug_Annot.gff3  
+```
 
+**Exporting protein sequences with gffread:**  
+```
+gffread -g GCF_000167835.1_ASM16783v1_genomic.fna -y GCF_000167835.1_ASM16783v1_Aug_Prot.faa GCF_000167835.1_ASM16783v1_Aug_Annot.gff3
+```
+Notice, when we attempt to use these files unmodified files with
+ContScout, it will fail complaining about the "protein_id" fields
+missing from the annotation.
 
-![en:JGIdownload](JGIdownload.jpg)
+```
+singularity run -B /scratch:/scratch /Software/SingularityImages/contscout/contscout.sif ContScout -u /scratch/balintb/Databases/ -d uniprotKB -i /scratch/balintb/Augustus/E_coli/ -q 562
+```
 
+**Importing data to R using the ContScout docker image**
 
+In the tutorial, we use the **R** environment straight from the
+ContScout docker image trough together with the pre-installed
+**rtracklayer** and **Biostrings** packages. To do so, please navigate
+to the query directory that contains "annotation_data" and "protein_seq"
+and start R.
+```
+singularity run -B \`pwd\`:/data docker://h836472/contscout:latest R
+```
 
-Please note: in order to download the protein you need to register for a JGI user account.
+```
+#ensure that annotation file and sequence file are both present  
+list.files(recursive=T)
 
-**Starting R from the ContScout docker image**
+#[1] "annotation_data/GCF_000167835.1_ASM16783v1_Aug_Annot.gff3"
+#[2] "protein_seq/GCF_000167835.1_ASM16783v1_Aug_Prot.faa"
 
-**Starting R from the ContScout docker image**
+#load required R libraries  
+library("Biostrings")
+library("rtracklayer")
 
-In the tutorial, we use the R environment from the ContScout docker image, together with the pre-installed **rtracklayer** and **Biostrings** packages.
-If you have a working R installation with the two required packages you may proceed straight to step "Importing data"
+#load data  
+protSeq=readAAStringSet("protein_seq/GCF_000167835.1_ASM16783v1_Aug_Prot.faa")  
+annot=readGFF("annotation_data/GCF_000167835.1_ASM16783v1_Aug_Annot.gff3")
 
-THIS PART OF THE TUTORIAL IS UNDER DEVELOPMENT PLEASE CHECK IT AGAIN IN WITHIN A FEW DAYS.
+#manually confirm that protein_id is missing from the annotation  
+colnames(annot)
+#[1] "seqid" "source" "type" "start" "end" "score" "strand" "phase"
+#[9] "ID" "Parent"  
+  
+#check the feature types present in the annotation file. Ensure that
+CDS is present.
+any(annot[,"type"]=="CDS")
+#TRUE
 
+#add a new annotation column, filled with NA-s
+annot[,"protein_id"]=NA
+
+#for all CDS features, we copy the tags from "ID" to "protein_id"  
+annot[annot[,"type"]=="CDS","protein_id"]=annot[annot[,"type"]=="CDS","ID"]  
+  
+#check if the protein_IDs from annotation match IDs of the protein
+sequences  
+length(setdiff(names(protSeq),annot[,"protein_id"]))/length(protSeq)*100
+#[1] 100  
+
+length(intersect(names(protSeq),annot[,"protein_id"]))/length(protSeq)*100  
+#[1] 0
+
+#unfortunately, IDs look completely different between protein seq and
+annotation  
+#if we continue like that, ContScout will give an error  
+#Error! Protein IDs in the protein sequence file completely differ from
+the IDs used in the GFF file.
+
+#Looking at the IDs it appears that the GFF IDs contain an extra ".cds"
+suffix. Let's remove it.
+ 
+annot[,"protein_id"]=gsub("\\.cds$","",annot[,"protein_id"])
+length(setdiff(names(protSeq),annot[,"protein_id"]))/length(protSeq)*100  
+#[1] 0  
+length(intersect(names(protSeq),annot[,"protein_id"]))/length(protSeq)*100
+#[1] 100  
+#protein seq and annotation data is completely matched by now
+export(annot,"annotation_data/GCF_000167835.1_ASM16783v1_Aug_AnnotFixed.gff3",format="gff3")  
+  
+#Do not forget to remove the old GFF from the query folder before starting ContScout
+unlink("annotation_data/GCF_000167835.1_ASM16783v1_Aug_Annot.gff3")
+```
+After these modifications, ContScout is good to go.
