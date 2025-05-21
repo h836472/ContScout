@@ -1,0 +1,16 @@
+,DB_Name,DB_URL
+1,ncbi_taxonomy,
+https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz.md5
+2,nr,https://ftp.ncbi.nlm.nih.gov/blast/db/nr-prot-metadata.json
+3,refseq,
+https://ftp.ncbi.nlm.nih.gov/blast/db/refseq_protein-prot-metadata.json
+4,swissprot,
+https://ftp.ncbi.nlm.nih.gov/blast/db/swissprot-prot-metadata.json
+5,uniref90,
+https://ftp.expasy.org/databases/uniprot/current_release/uniref/uniref90/RELEASE.metalink
+6,uniref100,
+https://ftp.expasy.org/databases/uniprot/current_release/uniref/uniref100/RELEASE.metalink
+7,uniprotKB,
+https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/RELEASE.metalink
+8,uniprotSP,
+https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/RELEASE.metalink
