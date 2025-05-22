@@ -1,4 +1,7 @@
 ![en:ContScoutLogo](ContScoutLogoSmall.png)
+
+IMPORTANT: this is an archived branch, that is officially no longer supported. Database download with the updateDB script included version will not work. Please consult the authors in case you need to use this specific version.
+
 # ContScout
 **Background**  
 ContScout is a pipeline developed for the identification and removal of contaminating sequences in draft genomes. As input, the tool requires two files: one with the predicted protein sequences in *fasta* format and a genome *annotation file* (gff, gff3 or gtf) linking protein IDs to contigs or scaffolds. (See user manual and tutorial more for details.)
