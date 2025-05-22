@@ -32,22 +32,22 @@ Pre-requisites for a native installation
 > cd ~/CS_install  
 > git clone https://github.com/h836472/ContScout.git  
 > cd ContScout/DockerScript/  
-> docker build ./ --tag contscout:latest --build-arg CACHEBUST=$(date +"%s")  
+> docker build ./ --tag contscout:develop --build-arg CACHEBUST=$(date +"%s")  
 Please allow 40-60 minutes of compilation time.
 
 (3) ready-to-use (binary) **Singularity image**, obtained from DockerHub  
 > mkdir ~/CS_install  
 > cd ~/CS_install  
-> singularity build contscout_latest.sif docker://h836472/contscout:latest  
+> singularity build contscout_latest.sif docker://h836472/contscout:develop  
 
 (4) ready-to-use (binary) **Docker image**, obtained from DockerHub  
-> docker pull h836472/contscout:latest  
+> docker pull h836472/contscout:develop  
 
 **Set up your local reference databases**
 
 The ContScout package contains an automated database updater tool called "updateDB" that fetches, labels and pre-formats public protein databases, such as uniref, nr or uniprotKB. Taxonomical labeling is based on the taxonomy database from NCBI.  
 You can check the command line parameters of the tool from Docker / Singularity
-* Docker: docker run h836472/contscout:latest updateDB -h  
+* Docker: docker run h836472/contscout:develop updateDB -h  
 * Singularity: singularity exec <cs_sif_file> updateDB -h
 
 **Command line options for updateDB**

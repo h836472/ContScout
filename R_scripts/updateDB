@@ -1,5 +1,5 @@
 #!/usr/bin/Rscript
-#NC Revision#2 official version, 12th Sep 2023, 13:20
+#Development version 22nd May 2025, 20:24 UTC+2
 ###########################
 #library and arguments init
 ###########################
@@ -15,13 +15,12 @@ suppressPackageStartupMessages(library("optparse"))
 suppressPackageStartupMessages(library(parallel))
 suppressPackageStartupMessages(library(rjson))
 suppressPackageStartupMessages(library(XML))
-suppressPackageStartupMessages(library(googlesheets4))
 suppressPackageStartupMessages(library("GenomicRanges"))
 cargs=commandArgs(trailingOnly=T)
 option_list = list(
   make_option(c("-u", "--userdir"), type="character", default=NULL, 
               help="Path to local database repository folder", metavar="userdir"),
-  make_option(c("-i", "--info"), type="character", default="https://docs.google.com/spreadsheets/d/1_FPaAnyHVUhHzV8gwic2X3RKaN9vSl9jcTN_50T7X24", 
+  make_option(c("-i", "--info"), type="character", default="https://raw.githubusercontent.com/h836472/ContScout/refs/heads/main/DatabaseInfo/CS_DatabaseInfo.csv", 
               help="Path to local database repository folder", metavar="info"),
   make_option(c("-l", "--list_databases"), action="store_true", default=FALSE,
               help="List pre-formatted databases stored in the local database repository."),  
@@ -37,9 +36,11 @@ if(FALSE)
 #manually set options, if you run the code interactively, for debugging/development
 opt=list()
 opt[["dbname"]]="swissprot" #-d
-opt[["cpu"]]=24 #-c 
-opt[["info"]]="https://docs.google.com/spreadsheets/d/1_FPaAnyHVUhHzV8gwic2X3RKaN9vSl9jcTN_50T7X24"
-opt[["userdir"]]="/work/balintb/databases_dev"
+opt[["cpu"]]=12 #-c 
+opt[["info"]]="https://raw.githubusercontent.com/h836472/ContScout/refs/heads/main/DatabaseInfo/CS_DatabaseInfo.csv"
+opt[["userdir"]]="/scratch/Databases"
+opt[["list_databases"]]=FALSE
+opt[["force"]]=FALSE
 
 }else{
 opt = parse_args(opt_parser);
@@ -129,21 +130,20 @@ stop("Please set your local database directory with -u or --userdir option!")
 
 
 info("Downloading database URL file")
+result <- try({
+  # Code that might throw an error
+  x <- 1 / 0
+}, silent = TRUE)
 
-if(grepl("^http",opt[["info"]])){
-#default variable is kept: download "official" db register from GoogleDrive
-gs4_deauth()
-DBinfo=try(read_sheet(opt[["info"]]),silent=T)
-if(!"data.frame"%in%class(DBinfo))
- {
- byedie("Unable to download database URL file from Google Cloud.")
- } 
-}else
-{
-#variable is set: local file is expected
-DBinfo=read.table(opt[["info"]],sep=",",as.is=T,row.name=1,header=T)
+if (inherits(result, "try-error")) {
+  cat("An error occurred!\n")
+} else {
+  cat("Result:", result, "\n")
 }
-DBinfo=data.frame(DBinfo,stringsAsFactors=F)
+DBinfo=try(read.csv(opt[["info"]],sep=",",as.is=T,row.name=1,header=T),silent=T)
+if(class(DBinfo)!="data.frame")
+{byedie("Error accessing database descriptor csv file.")}
+
 rownames(DBinfo)=DBinfo[,"DB_Name"]
 
 if((!grepl("^custom:.+:~*/.+$",opt[["dbname"]]))&& (!("ncbi_taxonomy"%in%rownames(DBinfo) && opt[["dbname"]]%in% rownames(DBinfo))))
@@ -211,7 +211,7 @@ tax.sel=tax.sel[rownames(s),]
 all(rownames(tax.sel)==rownames(s))
 taxtable=cbind(tax.sel,s)
 taxtable=data.frame(taxtable,stringsAsFactors=F)
-for(colname in c("family","order","class","phylum","kingdom","superkingdom"))
+for(colname in c("family","order","class","phylum","kingdom","domain"))
 {taxtable[,colname]=paste0("t",taxtable[,colname])
 }
 saveRDS(taxtable,paste0(workdir,"/",x.s[[2]],"_",x.s[[1]],"_taxID_DBcount.RDS"))
@@ -269,7 +269,7 @@ lineage=readLines(paste0(outdir,"/",taxdump.crc32,"/",taxdump.crc32,"_taxidlinea
 
 nodedata.list=mclapply(nodedata,function(x) unlist(strsplit(x,"\t|\t",fixed=T)),mc.cores=opt[["cpu"]])
 nodedata.ranks=sapply(nodedata.list,function(x) return(x[3]))
-ranks.sel=tolower(c("Genus","Family","Order","Class","Phylum","Kingdom","Superkingdom"))
+ranks.sel=tolower(c("Genus","Family","Order","Class","Phylum","Kingdom","Domain"))
 nodedata.list.sel=nodedata.list[nodedata.ranks%in%ranks.sel] 
 node_whitelist=lapply(nodedata.list.sel,function(x) x[c(1,3)]) 
 node_whitelist=do.call(rbind,node_whitelist)
@@ -299,7 +299,7 @@ names(x)=gsub(":.+$","",x)
 miss_tax=setdiff(ranks.sel,names(x))
 res=unlist(lapply(miss_tax,function(x) {a="";names(a)=x;return(a)}))
 x=c(res,x)
-x=x[tolower(c("Genus","Family","Order","Class","Phylum","Kingdom","Superkingdom"))]
+x=x[tolower(c("Genus","Family","Order","Class","Phylum","Kingdom","Domain"))]
 x=gsub("^.+:","",x)
 return(x)
 }
@@ -313,7 +313,7 @@ lineage.es[lineage.es[,"order"]=="","order"]=paste0("vo_",lineage.es[lineage.es[
 lineage.es[lineage.es[,"class"]=="","class"]=paste0("vc_",lineage.es[lineage.es[,"class"]=="","order"])
 lineage.es[lineage.es[,"phylum"]=="","phylum"]=paste0("vp_",lineage.es[lineage.es[,"phylum"]=="","class"])
 lineage.es[lineage.es[,"kingdom"]=="","kingdom"]=paste0("vk_",lineage.es[lineage.es[,"kingdom"]=="","phylum"])
-lineage.es=lineage.es[lineage.es[,"superkingdom"]!="",]
+lineage.es[lineage.es[,"domain"]=="","domain"]=paste0("vd_",lineage.es[lineage.es[,"domain"]=="","kingdom"])
 lineagefile=paste0(outdir,"/",taxdump.crc32,"/",taxdump.crc32,"_rankedtaxidlineage.RDS")
 saveRDS(lineage.es,lineagefile)
 unlink(paste0("tmp/",timestamp),recursive=T)
@@ -692,7 +692,7 @@ dl.ncbi_blastdb(what=opt[["dbname"]])
 }else if(opt[["dbname"]]%in%c("uniref90","uniref100","uniprotKB","uniprotSP")){
 dl.uniprot(what=opt[["dbname"]])
 }else if(opt[["dbname"]]=="ncbi_taxonomy"){
-dl.ncbi_tax()
+dl.ncbi_tax(paste0(getwd(),"/ncbi_taxonomy"))
 }else if(grepl("^custom:.+:~*/",opt[["dbname"]],ignore.case=T))
 {
 import_custom_set(opt[["dbname"]])
