@@ -1,6 +1,6 @@
 ![en:ContScoutLogo](ContScoutLogoSmall.png)
 
-IMPORTANT: this is an archived branch, that is officially no longer supported. Database download with the updateDB script included version will not work. Please consult the authors in case you need to use this specific version.
+IMPORTANT: this is an archived branch, that is officially no longer supported. Database download with the updateDB script included in this branch will no longer work. Please consult the authors in case you need to use this specific version.
 
 # ContScout
 **Background**  
