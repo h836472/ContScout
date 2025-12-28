@@ -1,5 +1,7 @@
 #!/usr/bin/Rscript
-#Development version, 30th Sep 2024
+#Development version, 
+28th Dec 2025
+#NCBI taxon name issue (superkingdom -> domain)
 byedie=function(x,log=TRUE,sure_q=TRUE) #set FALSE for development, TRUE for production
 {
 cat(x)
@@ -111,7 +113,7 @@ opt[["logfilename"]]=logfilename
 logfile=file(logfilename,open="a") 
 
 offsets=1:6
-names(offsets)=c("family","order","class","phylum","kingdom","superkingdom")
+names(offsets)=c("family","order","class","phylum","kingdom","domain")
 
 #Tool detects the number of physical cores, IGNORING hyperthreading
 
@@ -349,8 +351,8 @@ names(rankedlineage)=unlist(mclapply(rankedlineage,function(x) return(paste0("t"
 
 taxDict=sapply(rankedlineage,function(x) x[[2]])
 
-query_taxline=paste0("t",tax[paste0("t",opt[["querytax"]]),c("family","order","class","phylum","kingdom","superkingdom")])
-names(query_taxline)=c("family","order","class","phylum","kingdom","superkingdom")
+query_taxline=paste0("t",tax[paste0("t",opt[["querytax"]]),c("family","order","class","phylum","kingdom","domain")])
+names(query_taxline)=c("family","order","class","phylum","kingdom","domain")
 outdir=paste0(now.stamp)
 #for manual debugging, after readRDS("Arguments.RDS")
 #outdir=opt[["outdir"]]
@@ -558,7 +560,7 @@ info("Printing statistics on ABC files with (TRUE) or without (FALSE) taxon info
 summary(ABC.withtax) #we drop hits without 
 info("Dropping ABC lines with no taxon info.")
 ABC=ABC[ABC.withtax,]
-tax.sel=tax[ABC[,"H.TaxID"],c("family","order","class","phylum","kingdom","superkingdom")]  # we remove genus info realizing that this resolution is impossible to use in most cases, including Human sequences
+tax.sel=tax[ABC[,"H.TaxID"],c("family","order","class","phylum","kingdom","domain")]  # we remove genus info realizing that this resolution is impossible to use in most cases, including Human sequences
 colnames(tax.sel)=paste0("Tax:",colnames(tax.sel))
 ABC=cbind(ABC,tax.sel)
 ABC.s=split(ABC,ABC[,"Q"])
@@ -601,7 +603,7 @@ info("Performing protein classification.")
 protTaxCalls=lapply(ABC.s,FUN=topHitStat)
 cat("\n")
 protTaxCalls=do.call(rbind,protTaxCalls)
-colnames(protTaxCalls)=c("family","order","class","phylum","kingdom","superkingdom")
+colnames(protTaxCalls)=c("family","order","class","phylum","kingdom","domain")
 
 #Proteins with no hit against the reference database receive NA:0 calls.
 empty=c("NA:0","NA:0","NA:0","NA:0","NA:0","NA:0")
@@ -708,14 +710,14 @@ return(c(NA,NA))
 }
 }
 info("Performing scaffold (contig) taxon calls.")
-res=lapply(ctgDB.s,function(t) lapply(c("family","order","class","phylum","kingdom","superkingdom"),function(x) CTG_caller(t[,x])))
+res=lapply(ctgDB.s,function(t) lapply(c("family","order","class","phylum","kingdom","domain"),function(x) CTG_caller(t[,x])))
 ressum=lapply(res,function(x) sapply(x,function(y) return(y[[1]])))
 ressum=do.call(rbind,ressum)
 rescall=t(apply(ressum,1,function(x) as.numeric(x==query_taxline)))
 if(opt[["unknown"]]=="drop")
 {rescall[is.na(rescall)]=0}
 rescall=cbind(rownames(rescall),rescall)
-colnames(rescall)=c("Ctg.ID","family","order","class","phylum","kingdom","superkingdom")
+colnames(rescall)=c("Ctg.ID","family","order","class","phylum","kingdom","domain")
 
 rescall=merge(rescall,ctgDB.sl,all.x=T,all.y=T,by="Ctg.ID")
 rescall=rescall[order(-as.numeric(rescall[,"NProt"])),]
@@ -766,8 +768,8 @@ if(unknownprot.ratio>50)
 {info("Warning! More than 25% of the query proteins have no related sequence in the reference database!") }
 saveRDS(prot.callstats,paste0(outdir,"/R_saved_objects/prot.callstats.RDS"))
 
-drop_contigs=lapply(c("family","order","class","phylum","kingdom","superkingdom"),function(y) return(rownames(rescall)[rescall[,y]==0]))
-names(drop_contigs)=c("family","order","class","phylum","kingdom","superkingdom")
+drop_contigs=lapply(c("family","order","class","phylum","kingdom","domain"),function(y) return(rownames(rescall)[rescall[,y]==0]))
+names(drop_contigs)=c("family","order","class","phylum","kingdom","domain")
 drop.ctgDB=lapply(drop_contigs,function(y) ctgDB[ctgDB[,"Contig"]%in%y,])
 keep.ctgDB=lapply(drop_contigs,function(y) ctgDB[!ctgDB[,"Contig"]%in%y,])
 saveRDS(drop.ctgDB,paste0(outdir,"/R_saved_objects/drop_contig_DB.RDS"))
@@ -776,14 +778,14 @@ ABC.drop=lapply(names(drop.ctgDB),function(y){prots=drop.ctgDB[[y]][,"ProteinID"
 names(ABC.drop)=names(drop.ctgDB)
 saveRDS(ABC.drop,paste0(outdir,"/R_saved_objects/ABC_data_for_dropped.RDS"))
 
-RLE_depths=ctgDB[,c("family","order","class","phylum","kingdom","superkingdom","ProtSupport")]
+RLE_depths=ctgDB[,c("family","order","class","phylum","kingdom","domain","ProtSupport")]
 for(i in 1:(ncol(RLE_depths)-1))
 {
 RLE_depths[,i]=as.numeric(gsub("^.+:","",RLE_depths[,i]))
 }
 
 RLE_depths=split(RLE_depths[,1:6],RLE_depths[,7])
-RLE_depths=lapply(RLE_depths,function(x) {d=lapply(c("family","order","class","phylum","kingdom","superkingdom"),function(y) return(x[,y]));names(d)=c("family","order","class","phylum","kingdom","superkingdom");return(d)})
+RLE_depths=lapply(RLE_depths,function(x) {d=lapply(c("family","order","class","phylum","kingdom","domain"),function(y) return(x[,y]));names(d)=c("family","order","class","phylum","kingdom","domain");return(d)})
 RLE_depths=unlist(RLE_depths,recursive=F)
 
 names(RLE_depths)=paste0(names(RLE_depths),":")
@@ -886,8 +888,8 @@ giveback[["MixedTags_DroppedHostProts"]]=0
 }
 return(giveback)
 }
-res=lapply(c("family","order","class","phylum","kingdom","superkingdom"),FUN=do.stats)
-names(res)=c("family","order","class","phylum","kingdom","superkingdom")
+res=lapply(c("family","order","class","phylum","kingdom","domain"),FUN=do.stats)
+names(res)=c("family","order","class","phylum","kingdom","domain")
 
 resu=list()
 resu[[1]]=res
@@ -909,7 +911,7 @@ resu3=data.frame(resu3,stringsAsFactors=F)
 diagxls_out=paste0(outdir,"/diag_data/",opt[["what"]],"_RunDiag.xlsx")
 WriteXLS(list("RunDiag"=resu3),diagxls_out)
 
-#At each taxon rank, we callect all dropped proteins / contigs up in the taxon lineage (superkingdom, superkingdom+kingdom, superkingdom+kingdom+phylum)
+#At each taxon rank, we callect all dropped proteins / contigs up in the taxon lineage (domain, domain+kingdom, domain+kingdom+phylum)
 cumulative_ctg_drop=lapply(1:length(offsets),function(x) return(unique(unlist(drop_contigs[x:length(offsets)]))))
 cumulative_prot_drop=lapply(cumulative_ctg_drop,function(x) return(ctgDB[ctgDB[,"Contig"]%in%x,]))
 names(cumulative_ctg_drop)=names(cumulative_prot_drop)=names(offsets)
